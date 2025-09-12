@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id              Int      @id @default(autoincrement())
+  email           String   @unique
+  senha           String
+  nome            String
+  dataCriacao     DateTime @default(now())
+  dataAtualizacao DateTime @updatedAt
+
+  @@map("usuarios")
+}
+
+model Material {
+  id              Int        @id @default(autoincrement())
+  nome            String     @unique
+  descricao       String?
+  unidade         String     // kg, ton, etc
+  dataCriacao     DateTime   @default(now())
+  dataAtualizacao DateTime   @updatedAt
+  entradas        Entrada[]
+  saidas          Saida[]
+  estoque         Estoque?
+
+  @@map("materiais")
+}
+
+model Entrada {
+  id          Int      @id @default(autoincrement())
+  materialId  Int
+  quantidade  Float
+  preco       Float
+  data        DateTime @default(now())
+  material    Material @relation(fields: [materialId], references: [id], map: "entrada_material_fk")
+  estoque     Estoque  @relation(fields: [materialId], references: [materialId], map: "entrada_estoque_fk")
+
+  @@map("entradas")
+}
+
+model Saida {
+  id          Int      @id @default(autoincrement())
+  materialId  Int
+  quantidade  Float
+  data        DateTime @default(now())
+  material    Material @relation(fields: [materialId], references: [id], map: "saida_material_fk")
+  estoque     Estoque  @relation(fields: [materialId], references: [materialId], map: "saida_estoque_fk")
+
+  @@map("saidas")
+}
+
+model Estoque {
+  materialId    Int       @id
+  material      Material  @relation(fields: [materialId], references: [id], map: "estoque_material_fk")
+  quantidade    Float
+  precoMedio    Float
+  valorTotal    Float
+  entradas      Entrada[]
+  saidas        Saida[]
+  
+  @@map("estoque")
+}
