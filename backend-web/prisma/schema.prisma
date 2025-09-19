@@ -8,61 +8,64 @@ datasource db {
 }
 
 model Usuario {
-  id              Int      @id @default(autoincrement())
-  email           String   @unique
-  senha           String
-  nome            String
-  dataCriacao     DateTime @default(now())
-  dataAtualizacao DateTime @updatedAt
+  id         Int        @id @default(autoincrement())
+  email      String     @unique
+  senha      String
+  nome       String
+  dataCriacao DateTime  @default(now())
+  dataAtualizacao DateTime @default(now())
 
-  @@map("usuarios")
+  materiais  Material[]
+  entradas   Entrada[]
+  saidas     Saida[]
+  estoques   Estoque[]
 }
 
 model Material {
-  id              Int        @id @default(autoincrement())
-  nome            String     @unique
-  descricao       String?
-  unidade         String     // kg, ton, etc
-  dataCriacao     DateTime   @default(now())
-  dataAtualizacao DateTime   @updatedAt
-  entradas        Entrada[]
-  saidas          Saida[]
-  estoque         Estoque?
+  id         Int        @id @default(autoincrement())
+  nome       String
+  descricao  String?
+  unidade    String
+  dataCriacao DateTime  @default(now())
+  dataAtualizacao DateTime @default(now())
+  usuarioId  Int
+  usuario    Usuario    @relation(fields: [usuarioId], references: [id])
 
-  @@map("materiais")
+  entradas   Entrada[]
+  saidas     Saida[]
+  estoque    Estoque?
+  
+  @@unique([nome, usuarioId])
 }
 
 model Entrada {
-  id          Int      @id @default(autoincrement())
-  materialId  Int
-  quantidade  Float
-  preco       Float
-  data        DateTime @default(now())
-  material    Material @relation(fields: [materialId], references: [id], map: "entrada_material_fk")
-  estoque     Estoque  @relation(fields: [materialId], references: [materialId], map: "entrada_estoque_fk")
-
-  @@map("entradas")
+  id         Int        @id @default(autoincrement())
+  materialId Int
+  material   Material   @relation(fields: [materialId], references: [id])
+  quantidade Float
+  preco      Float
+  data       DateTime   @default(now())
+  usuarioId  Int
+  usuario    Usuario    @relation(fields: [usuarioId], references: [id])
 }
 
 model Saida {
-  id          Int      @id @default(autoincrement())
-  materialId  Int
-  quantidade  Float
-  data        DateTime @default(now())
-  material    Material @relation(fields: [materialId], references: [id], map: "saida_material_fk")
-  estoque     Estoque  @relation(fields: [materialId], references: [materialId], map: "saida_estoque_fk")
-
-  @@map("saidas")
+  id         Int        @id @default(autoincrement())
+  materialId Int
+  material   Material   @relation(fields: [materialId], references: [id])
+  quantidade Float
+  data       DateTime   @default(now())
+  usuarioId  Int
+  usuario    Usuario    @relation(fields: [usuarioId], references: [id])
 }
 
 model Estoque {
-  materialId    Int       @id
-  material      Material  @relation(fields: [materialId], references: [id], map: "estoque_material_fk")
-  quantidade    Float
-  precoMedio    Float
-  valorTotal    Float
-  entradas      Entrada[]
-  saidas        Saida[]
-  
-  @@map("estoque")
+  id         Int        @id @default(autoincrement())
+  materialId Int        @unique
+  material   Material   @relation(fields: [materialId], references: [id])
+  quantidade Float
+  precoMedio Float
+  valorTotal Float
+  usuarioId  Int
+  usuario    Usuario    @relation(fields: [usuarioId], references: [id])
 }
