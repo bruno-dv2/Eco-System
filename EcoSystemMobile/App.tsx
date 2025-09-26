@@ -1,15 +1,15 @@
 import React from 'react';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider } from './src/contexts/AuthContext';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import WelcomeScreen from './screens/Welcome';
-import LoginScreen from './screens/Login';
-import RegistroScreen from './screens/Registro';
-import DashboardScreen from './screens/Dashboard';
-import MateriaisScreen from './screens/Materiais';
-import EstoqueScreen from './screens/Estoque';
-import EntradaMaterialScreen from './screens/EntradaMaterial';
-import SaidaMaterialScreen from './screens/SaidaMaterial';
+import WelcomeScreen from './src/screens/Welcome';
+import LoginScreen from './src/screens/Login';
+import RegistroScreen from './src/screens/Registro';
+import DashboardScreen from './src/screens/Dashboard';
+import MateriaisScreen from './src/screens/Materiais';
+import EstoqueScreen from './src/screens/Estoque';
+import EntradaMaterialScreen from './src/screens/EntradaMaterial';
+import SaidaMaterialScreen from './src/screens/SaidaMaterial';
 
 
 export type RootStackParamList = {
@@ -30,7 +30,7 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="Dashboard">
+        <Stack.Navigator initialRouteName="Welcome">
           <Stack.Screen name="Welcome" component={WelcomeScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Registro" component={RegistroScreen} />
