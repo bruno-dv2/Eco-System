@@ -101,6 +101,16 @@ const Login: React.FC = () => {
             </TouchableOpacity>
           </View>
         </View>
+        
+        <TouchableOpacity
+          style={styles.forgotPassword}
+          onPress={() => navigation.navigate("RecuperarSenha")}
+        >
+          <Text style={styles.forgotPasswordText}>
+            Esqueceu sua senha?{" "}
+            <Text style={styles.recoverText}>Recuperar senha</Text>
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -198,5 +208,17 @@ const styles = StyleSheet.create({
     color: "#2563EB",
     fontWeight: "bold",
     fontSize: 14,
+  },
+  forgotPassword: {
+    marginTop: 18,
+    alignItems: "center",
+  },
+  forgotPasswordText: {
+    color: "#374151",
+    fontSize: 14,
+  },
+  recoverText: {
+    color: "#2563EB",
+    fontWeight: "bold",
   },
 });

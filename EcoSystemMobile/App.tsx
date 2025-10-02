@@ -10,12 +10,14 @@ import MateriaisScreen from './src/screens/Materiais';
 import EstoqueScreen from './src/screens/Estoque';
 import EntradaMaterialScreen from './src/screens/EntradaMaterial';
 import SaidaMaterialScreen from './src/screens/SaidaMaterial';
+import RecuperarSenhaScreen from './src/screens/RecuperarSenha';
 
 
 export type RootStackParamList = {
   Welcome: undefined;
   Login: undefined;
   Registro: undefined;
+  RecuperarSenha: undefined;
   Dashboard: undefined;
   Materiais: undefined;
   Estoque: undefined;
@@ -34,6 +36,7 @@ const App: React.FC = () => {
           <Stack.Screen name="Welcome" component={WelcomeScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Registro" component={RegistroScreen} />
+          <Stack.Screen name="RecuperarSenha" component={RecuperarSenhaScreen} />
           <Stack.Screen name="Dashboard" component={DashboardScreen} />
           <Stack.Screen name="Materiais" component={MateriaisScreen} />
           <Stack.Screen name="Estoque" component={EstoqueScreen} />
