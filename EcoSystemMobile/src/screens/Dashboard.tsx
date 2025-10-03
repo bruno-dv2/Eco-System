@@ -8,17 +8,27 @@ import { formatCurrency } from '../utils/currency';
 import MateriaisScreen from './Materiais'; 
 import Estoque from './Estoque';
 import { Feather } from "@expo/vector-icons";
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { useAuth } from '../contexts/AuthContext';
 
 const Dashboard: React.FC = () => {
+  const { logout, usuario } = useAuth();
   const [saldos, setSaldos] = useState<SaldoMaterial[]>([]);
   const [materiais, setMateriais] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState('');
   const [activeTab, setActiveTab] = useState<'Painel' | 'Materiais' | 'Estoque'>('Painel');
-  const [showUserModal, setShowUserModal] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   const navigation = useNavigation<any>();
+
+  const handleLogout = async () => {
+    setShowUserMenu(false);
+    await logout();
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Welcome' }],
+    });
+  };
 
   const carregarDados = async () => {
     try {
@@ -52,39 +62,59 @@ const Dashboard: React.FC = () => {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
-        {/* Header Usuário */}
+        {/* Header com Avatar */}
         <View style={styles.header}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={styles.userText}>Usuário</Text>
-            <TouchableOpacity onPress={() => setShowUserModal(true)}>
-              <MaterialIcons name="arrow-drop-down" size={24} color="black" />
-            </TouchableOpacity>
-          </View>
+          <Text style={styles.welcomeText}>Olá, {usuario?.nome || 'Usuário'}!</Text>
+          <TouchableOpacity 
+            style={styles.avatarButton}
+            onPress={() => setShowUserMenu(true)}
+          >
+            <View style={styles.avatar}>
+              <Feather name="user" size={20} color="#4F46E5" />
+            </View>
+          </TouchableOpacity>
         </View>
         
-        {/* Modal Usuário */}
+        {/* Modal Menu de Usuário */}
         <Modal
-          visible={showUserModal}
+          visible={showUserMenu}
           transparent
           animationType="fade"
-          onRequestClose={() => setShowUserModal(false)}
+          onRequestClose={() => setShowUserMenu(false)}
         >
           <TouchableOpacity
             style={styles.modalOverlay}
             activeOpacity={1}
-            onPressOut={() => setShowUserModal(false)}
+            onPressOut={() => setShowUserMenu(false)}
           >
-            <View style={styles.modalContent}>
+            <View style={styles.menuModal}>
+              <View style={styles.menuHeader}>
+                <View style={styles.menuAvatar}>
+                  <Feather name="user" size={24} color="#4F46E5" />
+                </View>
+                <Text style={styles.menuUserName}>{usuario?.nome}</Text>
+                <Text style={styles.menuUserEmail}>{usuario?.email}</Text>
+              </View>
+
+              <View style={styles.menuDivider} />
+
               <TouchableOpacity
+                style={styles.menuItem}
                 onPress={() => {
-                  setShowUserModal(false);
+                  setShowUserMenu(false);
                   navigation.navigate('AlterarSenha');
                 }}
               >
-                <Text style={styles.userModalItem}>Alterar senha</Text>
+                <Feather name="lock" size={20} color="#6B7280" />
+                <Text style={styles.menuItemText}>Alterar senha</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => setShowUserModal(false)}>
-                <Text style={styles.userModalItem}>Sair</Text>
+
+              <TouchableOpacity
+                style={[styles.menuItem, styles.logoutItem]}
+                onPress={handleLogout}
+              >
+                <Feather name="log-out" size={20} color="#EF4444" />
+                <Text style={styles.logoutText}>Sair</Text>
               </TouchableOpacity>
             </View>
           </TouchableOpacity>
@@ -153,25 +183,25 @@ const Dashboard: React.FC = () => {
         {activeTab === 'Materiais' && <MateriaisScreen />}
 
         {/* Estoque */}
-        {activeTab === 'Estoque' &&  <Estoque />}
+        {activeTab === 'Estoque' && <Estoque />}
 
       </ScrollView>
 
-     {/* Navegação */}
-          <View style={styles.bottomNav}>
-            {[
-              { name: "Entrada", icon: "log-in", action: () => navigation.navigate("EntradaMaterial") },
-              { name: "Saída", icon: "log-out", action: () => navigation.navigate("SaidaMaterial") },
-              { name: "Painel", icon: "layout", action: () => setActiveTab("Painel") },
-              { name: "Materiais", icon: "archive", action: () => setActiveTab("Materiais") },
-              { name: "Estoque", icon: "box", action: () => setActiveTab("Estoque") },
-            ].map((item) => (
-              <TouchableOpacity key={item.name} style={styles.navItem} onPress={item.action}>
-                <Feather name={item.icon as any} size={20} color="#000" />
-                <Text style={styles.navText}>{item.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+      {/* Navegação Inferior */}
+      <View style={styles.bottomNav}>
+        {[
+          { name: "Entrada", icon: "log-in", action: () => navigation.navigate("EntradaMaterial") },
+          { name: "Saída", icon: "log-out", action: () => navigation.navigate("SaidaMaterial") },
+          { name: "Painel", icon: "layout", action: () => setActiveTab("Painel") },
+          { name: "Materiais", icon: "archive", action: () => setActiveTab("Materiais") },
+          { name: "Estoque", icon: "box", action: () => setActiveTab("Estoque") },
+        ].map((item) => (
+          <TouchableOpacity key={item.name} style={styles.navItem} onPress={item.action}>
+            <Feather name={item.icon as any} size={20} color="#000" />
+            <Text style={styles.navText}>{item.name}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
     </View>
   );
 };
@@ -181,7 +211,7 @@ export default Dashboard;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F9FAFB',
   },
   centered: {
     flex: 1,
@@ -199,15 +229,36 @@ const styles = StyleSheet.create({
     color: '#374151',
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
-  userText: {
-    fontSize: 16,
+  welcomeText: {
+    fontSize: 18,
+    fontWeight: '600',
     color: '#111827',
+  },
+  avatarButton: {
+    padding: 4,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#EEF2FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#C7D2FE',
   },
   tabs: {
     flexDirection: 'row',
     marginHorizontal: 16,
+    marginTop: 16,
     marginBottom: 16,
     backgroundColor: '#F3F4F6',
     borderRadius: 999,
@@ -234,8 +285,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 16,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
   cardTitle: {
     fontSize: 14,
@@ -266,6 +320,7 @@ const styles = StyleSheet.create({
     borderColor: '#4F46E5',
     borderRadius: 999,
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
   },
   actionText: {
     color: '#4F46E5',
@@ -279,6 +334,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: 'center',
     marginBottom: 16,
+    backgroundColor: '#FFFFFF',
   },
   addButtonText: {
     color: '#4F46E5',
@@ -286,53 +342,97 @@ const styles = StyleSheet.create({
   },
   bottomNav: {
     flexDirection: 'row',
-    backgroundColor: '#0022ce51',
+    backgroundColor: '#FFFFFF',
     height: 80,
     width: '100%',
     justifyContent: 'space-around',
     alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
+    paddingBottom: 10,
   },
   navItem: {
     alignItems: 'center',
-     marginTop: -10,
   },
   navText: {
-    color: '#000000ff',
+    color: '#6B7280',
     fontWeight: '500',
-  },
-  userModal: {
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    elevation: 2,
+    fontSize: 12,
     marginTop: 4,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  userModalItem: {
-    paddingVertical: 12,
-    color: '#111827',
-    fontWeight: '500',
   },
   modalOverlay: {
     flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    paddingTop: 60,
+    paddingRight: 16,
+  },
+  menuModal: {
+    width: 280,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  menuHeader: {
+    alignItems: 'center',
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+  },
+  menuAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#EEF2FF',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    marginBottom: 12,
+    borderWidth: 3,
+    borderColor: '#C7D2FE',
   },
-  modalContent: {
-    width: '80%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
+  menuUserName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  menuUserEmail: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: '#E5E7EB',
+    marginHorizontal: 16,
+  },
+  menuItem: {
+    flexDirection: 'row',
     alignItems: 'center',
-    elevation: 4,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+  },
+  menuItemText: {
+    fontSize: 16,
+    color: '#374151',
+    marginLeft: 12,
+    fontWeight: '500',
+  },
+  logoutItem: {
+    borderTopWidth: 1,
+    borderTopColor: '#FEE2E2',
+    backgroundColor: '#FEF2F2',
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+  },
+  logoutText: {
+    fontSize: 16,
+    color: '#EF4444',
+    marginLeft: 12,
+    fontWeight: '600',
   },
 });
