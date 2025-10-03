@@ -4,7 +4,13 @@ import { UsuarioController } from '../controllers/UsuarioController';
 const router = Router();
 const usuarioController = new UsuarioController();
 
-router.post('/registro', (req, res) => usuarioController.registro(req, res));
-router.post('/login', (req, res) => usuarioController.login(req, res));
+// Cadastro
+router.post("/registro", usuarioController.registro.bind(usuarioController));
+
+// Login
+router.post("/login", usuarioController.login.bind(usuarioController));
+
+// Solicitar recuperação de senha (gera token e envia e-mail)
+router.post("/recuperacao", usuarioController.recuperacao.bind(usuarioController));
 
 export default router;
