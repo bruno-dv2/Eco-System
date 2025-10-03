@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import rotasAutenticacao from './rotas/autenticacao';
 import rotasMaterial from './rotas/material';
 import rotasEstoque from './rotas/estoque';
-import { limparTokensExpirados } from '../src/service/limpezaToken';
+import { limparTokensExpirados } from './services/limpezaToken';
 
 dotenv.config();
 
