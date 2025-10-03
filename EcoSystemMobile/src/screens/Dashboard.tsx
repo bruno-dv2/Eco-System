@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { estoqueService } from '../services/estoque';
 import { materialService } from '../services/material';
@@ -8,6 +8,7 @@ import { formatCurrency } from '../utils/currency';
 import MateriaisScreen from './Materiais'; 
 import Estoque from './Estoque';
 import { Feather } from "@expo/vector-icons";
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 const Dashboard: React.FC = () => {
   const [saldos, setSaldos] = useState<SaldoMaterial[]>([]);
@@ -15,6 +16,7 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState('');
   const [activeTab, setActiveTab] = useState<'Painel' | 'Materiais' | 'Estoque'>('Painel');
+  const [showUserModal, setShowUserModal] = useState(false);
 
   const navigation = useNavigation<any>();
 
@@ -52,8 +54,41 @@ const Dashboard: React.FC = () => {
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
         {/* Header Usuário */}
         <View style={styles.header}>
-          <Text style={styles.userText}>Usuário</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={styles.userText}>Usuário</Text>
+            <TouchableOpacity onPress={() => setShowUserModal(true)}>
+              <MaterialIcons name="arrow-drop-down" size={24} color="black" />
+            </TouchableOpacity>
+          </View>
         </View>
+        
+        {/* Modal Usuário */}
+        <Modal
+          visible={showUserModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowUserModal(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPressOut={() => setShowUserModal(false)}
+          >
+            <View style={styles.modalContent}>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowUserModal(false);
+                  navigation.navigate('AlterarSenha');
+                }}
+              >
+                <Text style={styles.userModalItem}>Alterar senha</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowUserModal(false)}>
+                <Text style={styles.userModalItem}>Sair</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
 
         {/* Tabs */}
         <View style={styles.tabs}>
@@ -266,5 +301,38 @@ const styles = StyleSheet.create({
   navText: {
     color: '#000000ff',
     fontWeight: '500',
+  },
+  userModal: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    elevation: 2,
+    marginTop: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  userModalItem: {
+    paddingVertical: 12,
+    color: '#111827',
+    fontWeight: '500',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    elevation: 4,
   },
 });
