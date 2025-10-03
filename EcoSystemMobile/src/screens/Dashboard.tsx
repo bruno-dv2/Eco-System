@@ -75,7 +75,12 @@ const Dashboard: React.FC = () => {
             onPressOut={() => setShowUserModal(false)}
           >
             <View style={styles.modalContent}>
-              <TouchableOpacity onPress={() => setShowUserModal(false)}>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowUserModal(false);
+                  navigation.navigate('AlterarSenha');
+                }}
+              >
                 <Text style={styles.userModalItem}>Alterar senha</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setShowUserModal(false)}>
