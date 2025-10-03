@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import rotasAutenticacao from './rotas/autenticacao';
 import rotasMaterial from './rotas/material';
 import rotasEstoque from './rotas/estoque';
+import { limparTokensExpirados } from '../src/service/limpezaToken';
 
 dotenv.config();
 
@@ -27,3 +28,5 @@ const PORTA = process.env.PORT || 3001;
 app.listen(PORTA, () => {
   console.log(`Servidor rodando na porta ${PORTA}`);
 });
+
+limparTokensExpirados();
