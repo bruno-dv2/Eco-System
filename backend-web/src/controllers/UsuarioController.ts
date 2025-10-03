@@ -82,4 +82,36 @@ export class UsuarioController {
       res.status(400).json({ erro: 'Falha no login' });
     }
   }
+
+  async logout(req: Request, res: Response): Promise<void> {
+    try {
+      const headerAuth = req.headers.authorization;
+
+      if (!headerAuth) {
+        res.status(401).json({ erro: 'Token não fornecido' });
+        return;
+      }
+
+      const [, token] = headerAuth.split(' ');
+
+      if (!token) {
+        res.status(401).json({ erro: 'Token mal formatado' });
+        return;
+      }
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { exp: number };
+      
+      await prisma.tokenRevogado.create({
+        data: {
+          token: token,
+          expiraEm: new Date(decoded.exp * 1000)
+        }
+      });
+
+      res.json({ mensagem: 'Logout realizado com sucesso' });
+    } catch (error) {
+      console.error(error);
+      res.status(400).json({ erro: 'Falha no logout' });
+    }
+  }
 }

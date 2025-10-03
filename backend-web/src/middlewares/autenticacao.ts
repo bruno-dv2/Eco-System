@@ -1,5 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 interface PayloadToken {
   usuarioId: number;
@@ -40,6 +43,15 @@ export const authMiddleware = async (
   }
 
   try {
+    const tokenRevogado = await prisma.tokenRevogado.findUnique({
+      where: { token: token }
+    });
+
+    if (tokenRevogado) {
+      res.status(401).json({ erro: 'Token revogado. Faça login novamente.' });
+      return;
+    }
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as PayloadToken;
     req.usuarioId = decoded.usuarioId;
     next();

@@ -20,8 +20,15 @@ export const authService = {
   },
 
   async logout() {
-    await AsyncStorage.removeItem('token');
+    try {
+      await api.post('/auth/logout');
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    } finally {
+      await AsyncStorage.removeItem('token');
+    }
   }
+  
 };
 
 export default authService;
