@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
+import * as SplashScreen from 'expo-splash-screen';
+import { View, ActivityIndicator, StyleSheet, Image } from 'react-native';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
 import WelcomeScreen from './src/screens/Welcome';
 import LoginScreen from './src/screens/Login';
 import RegistroScreen from './src/screens/Registro';
@@ -13,6 +16,8 @@ import SaidaMaterialScreen from './src/screens/SaidaMaterial';
 import RecuperarSenhaScreen from './src/screens/RecuperarSenha';
 import AlterarSenhaScreen from './src/screens/AlterarSenha';
 
+//impede a splash de sumir automaticamente
+SplashScreen.preventAutoHideAsync();
 
 export type RootStackParamList = {
   Welcome: undefined;
@@ -27,14 +32,54 @@ export type RootStackParamList = {
   AlterarSenha: undefined;
 };
 
-
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const App: React.FC = () => {
+  const [isAppReady, setAppReady] = useState(false);
+
+  useEffect(() => {
+    async function prepare() {
+      try {
+        await new Promise(resolve => setTimeout(resolve, 2000));  //time de splash
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setAppReady(true);
+      }
+    }
+
+    prepare();
+  }, []);
+
+  //Quando o app estiver pronto, esconde a splash
+  const onLayoutRootView = useCallback(async () => {
+    if (isAppReady) {
+      await SplashScreen.hideAsync();
+    }
+  }, [isAppReady]);
+
+  if (!isAppReady) {
+    // Tela de loading enquanto a splash ainda está ativa
+    return (
+        <View style={styles.splashContainer}>
+          <Image
+            source={require('./src/assets/splash-icon.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        <ActivityIndicator
+          size="large"
+          color="#007AFF"
+          style={styles.indicator}
+        />
+      </View>
+    );
+  }
+
   return (
     <AuthProvider>
-      <NavigationContainer>
-        <Stack.Navigator initialRouteName="Welcome">
+      <NavigationContainer onReady={onLayoutRootView}>
+        <Stack.Navigator initialRouteName="Welcome" screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Welcome" component={WelcomeScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Registro" component={RegistroScreen} />
@@ -52,3 +97,20 @@ const App: React.FC = () => {
 };
 
 export default App;
+
+const styles = StyleSheet.create({
+  splashContainer: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logo: {
+    width: 220,
+    height: 220,
+  },
+  indicator: {
+    position: 'absolute',
+    bottom: 60,
+  },
+});
