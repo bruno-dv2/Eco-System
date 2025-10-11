@@ -78,14 +78,19 @@ const App: React.FC = () => {
 
   return (
     <AuthProvider>
-      <NavigationContainer onReady={onLayoutRootView}>
-        <Stack.Navigator initialRouteName="Welcome" screenOptions={{ headerShown: false }}>
+      <NavigationContainer>
+        <Stack.Navigator initialRouteName="Dashboard">
           <Stack.Screen name="Welcome" component={WelcomeScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Registro" component={RegistroScreen} />
           <Stack.Screen name="RecuperarSenha" component={RecuperarSenhaScreen} />
-          <Stack.Screen name="Dashboard" component={DashboardScreen} />
-          <Stack.Screen name="AlterarSenha" component={AlterarSenhaScreen} />
+          <Stack.Screen
+			  name="Dashboard"
+			  component={DashboardScreen}
+			  options={{
+			    headerShown: false, // remove o header padrão do Stack
+			  }}
+			/>          <Stack.Screen name="AlterarSenha" component={AlterarSenhaScreen} />
           <Stack.Screen name="Materiais" component={MateriaisScreen} />
           <Stack.Screen name="Estoque" component={EstoqueScreen} />
           <Stack.Screen name="EntradaMaterial" component={EntradaMaterialScreen} />

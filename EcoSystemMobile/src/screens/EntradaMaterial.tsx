@@ -122,13 +122,13 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   header: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#ffffffff',
     padding: 16,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: '#000000ff',
   },
   body: {
     padding: 16,
