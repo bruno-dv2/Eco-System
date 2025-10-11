@@ -2,224 +2,170 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   FlatList,
+  ActivityIndicator,
+  TextInput,
   StyleSheet,
+  ScrollView,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { estoqueService } from '../services/estoque';
 import { SaldoMaterial } from '../types';
-import { formatCurrency } from '../utils/currency';
-import { useNavigation } from '@react-navigation/native';
+import { formatCurrency, formatQuantity } from '../utils/currency';
 
-const Estoque: React.FC = () => {
+export default function Estoque() {
   const [saldos, setSaldos] = useState<SaldoMaterial[]>([]);
-  const [filtro, setFiltro] = useState('');
   const [loading, setLoading] = useState(true);
-  const navigation = useNavigation<any>();
+  const [erro, setErro] = useState('');
+  const [search, setSearch] = useState('');
+
+  const carregarDados = async () => {
+    setLoading(true);
+    try {
+      const saldosData = await estoqueService.consultarSaldo();
+      setSaldos(saldosData.filter(saldo => saldo.quantidade > 0));
+      setErro('');
+    } catch {
+      setErro('Falha ao carregar dados do estoque');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const carregar = async () => {
-      try {
-        const data = await estoqueService.consultarSaldo();
-        setSaldos(data);
-      } catch (e) {
-        console.log(e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    carregar();
+    carregarDados();
   }, []);
 
-  const valorTotal = saldos.reduce(
-    (total, item) => total + item.quantidade * item.precoMedio,
+  const valorTotalEstoque = saldos.reduce(
+    (total, saldo) => total + saldo.quantidade * saldo.precoMedio,
     0
   );
 
-  const materiaisFiltrados = saldos.filter(item =>
-    item.material.toLowerCase().includes(filtro.toLowerCase())
+  const saldosFiltrados = saldos.filter(s =>
+    s.material.toLowerCase().includes(search.toLowerCase())
   );
 
-  const renderItem = ({ item }: { item: SaldoMaterial }) => (
-    <View style={styles.row}>
-      <View style={styles.cellMaterial}>
-        <Text style={styles.materialNome}>{item.material}</Text>
-        <Text style={styles.materialQtd}>{item.quantidade}</Text>
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#2563EB" />
+        <Text style={{ marginTop: 8, color: '#374151' }}>Carregando...</Text>
       </View>
-      <Text style={styles.cell}>{formatCurrency(item.precoMedio)}</Text>
-      <Text style={styles.cell}>
-        {formatCurrency(item.quantidade * item.precoMedio)}
-      </Text>
-    </View>
-  );
+    );
+  }
+
+  const renderItem = ({ item }: { item: SaldoMaterial }) => {
+    const lowStock = item.quantidade < 10;
+    return (
+      <View style={[styles.item, lowStock && styles.lowStock]}>
+        <Text style={[styles.col, { flex: 3 }]}>{item.material}</Text>
+        <Text style={[styles.col, { flex: 1, textAlign: 'right' }]}>
+          {formatQuantity(item.quantidade)}
+        </Text>
+        <Text style={[styles.col, { flex: 1 }]}>{item.unidade}</Text>
+        <Text style={[styles.col, { flex: 2, textAlign: 'right' }]}>
+          {formatCurrency(item.precoMedio)}
+        </Text>
+        <Text style={[styles.col, { flex: 2, textAlign: 'right' }]}>
+          {formatCurrency(item.quantidade * item.precoMedio)}
+        </Text>
+      </View>
+    );
+  };
 
   return (
     <View style={styles.container}>
-      {/* Card Resumo */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Resumo do estoque</Text>
-        <Text style={styles.cardValue}>Valor Total: {formatCurrency(valorTotal)}</Text>
-      </View>
+      {/* Cabeçalho */}
+      <Text style={styles.title}>Controle de Estoque</Text>
 
-      {/* Campo pesquisa */}
-      <View style={styles.searchBox}>
-        <Feather name="search" size={18} color="#6B7280" />
+      {/* Barra de pesquisa */}
+      <View style={styles.searchContainer}>
+        <Feather name="search" size={20} color="#000" style={{ marginRight: 8 }} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Pesquisar"
-          value={filtro}
-          onChangeText={setFiltro}
+          placeholder="Pesquisar material"
+          value={search}
+          onChangeText={setSearch}
         />
       </View>
 
-      {/* Cabeçalho tabela */}
-      <View style={styles.tableHeader}>
-        <TouchableOpacity style={styles.headerCell}>
-          <Text style={styles.headerText}>Quant.</Text>
-          <Feather name="arrow-up" size={14} color="#6B7280" />
-          <Feather name="arrow-down" size={14} color="#6B7280" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.headerCell}>
-          <Text style={styles.headerText}>Preço méd.</Text>
-           <Feather name="arrow-up" size={14} color="#6B7280" />
-          <Feather name="arrow-down" size={14} color="#6B7280" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.headerCell}>
-          <Text style={styles.headerText}>Valor total</Text>
-          <Feather name="arrow-up" size={14} color="#6B7280" />
-          <Feather name="arrow-down" size={14} color="#6B7280" />
-        </TouchableOpacity>
+      {erro ? <Text style={styles.msgErro}>{erro}</Text> : null}
+
+      {/* Resumo do estoque */}
+      <View style={styles.card}>
+        <Text style={styles.subtitle}>Resumo do Estoque</Text>
+        <Text style={styles.valorTotal}>Valor Total: {formatCurrency(valorTotalEstoque)}</Text>
       </View>
 
-      {/* Lista */}
-      <FlatList
-        data={materiaisFiltrados}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={renderItem}
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>Nenhum material encontrado</Text>
-        }
-      />
+      {/* Lista de saldo */}
+      <View style={styles.card}>
+        <Text style={styles.subtitle}>Saldo Atual</Text>
 
-      {/* Botões rodapé */}
-      <View style={styles.footerButtons}>
-        <TouchableOpacity
-          style={styles.footerButton}
-          onPress={() => navigation.navigate('EntradaMaterial')}
-        >
-          <Text style={styles.footerButtonText}>Nova entrada</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.footerButton}
-          onPress={() => navigation.navigate('SaidaMaterial')}
-        >
-          <Text style={styles.footerButtonText}>Nova saída</Text>
-        </TouchableOpacity>
+        {/* Cabeçalho da lista */}
+        <View style={[styles.item, styles.header]}>
+          <Text style={[styles.col, { flex: 3 }]}>Material</Text>
+          <Text style={[styles.col, { flex: 1, textAlign: 'right' }]}>Qtd</Text>
+          <Text style={[styles.col, { flex: 1 }]}>Uni</Text>
+          <Text style={[styles.col, { flex: 2, textAlign: 'right' }]}>Preço</Text>
+          <Text style={[styles.col, { flex: 2, textAlign: 'right' }]}>Total</Text>
+        </View>
+
+        {saldosFiltrados.length === 0 ? (
+          <View style={[styles.item]}>
+            <Text style={{ flex: 9, textAlign: 'center', color: '#6b7280' }}>
+              Nenhum material em estoque
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={saldosFiltrados}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={renderItem}
+          />
+        )}
+
+        {/* Total */}
+        {saldosFiltrados.length > 0 && (
+          <View style={[styles.item, styles.header]}>
+            <Text style={{ flex: 8, textAlign: 'right', fontWeight: 'bold' }}>
+              Valor Total do Estoque:
+            </Text>
+            <Text style={{ flex: 2, textAlign: 'right', fontWeight: 'bold' }}>
+              {formatCurrency(valorTotalEstoque)}
+            </Text>
+          </View>
+        )}
       </View>
     </View>
   );
-};
-
-export default Estoque;
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: '#fff',
-  },
-  card: {
-    backgroundColor: '#fff',
-    padding: 16,
-    marginBottom: 16,
-    borderRadius: 8,
-    elevation: 2,
-  },
-  cardTitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 4,
-  },
-  cardValue: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  searchBox: {
+  container: { flex: 1, padding: 16, backgroundColor: '#f9fafb' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 12 },
+  subtitle: { fontSize: 18, fontWeight: '600', marginBottom: 8 },
+  searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
+    borderColor: '#292626',
+    borderRadius: 4,
     paddingHorizontal: 8,
+    paddingVertical: 4,
     marginBottom: 12,
-    height: 40,
+    backgroundColor: '#fff',
   },
-  searchInput: {
-    flex: 1,
-    marginLeft: 8,
-  },
-  tableHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  headerCell: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  headerText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#6B7280',
-    marginRight: 4,
-  },
-  row: {
-    flexDirection: 'row',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  cellMaterial: {
-    flex: 2,
-  },
-  materialNome: {
+  searchInput: { flex: 1, height: 40 },
+  msgErro: { backgroundColor: '#fee2e2', color: '#b91c1c', padding: 8, borderRadius: 4, marginBottom: 8 },
+  card: { backgroundColor: '#fff', borderRadius: 8, padding: 16, marginBottom: 16, elevation: 2 },
+  valorTotal: { fontSize: 22, fontWeight: 'bold', marginTop: 8 },
+  item: { flexDirection: 'row', paddingVertical: 12, paddingHorizontal: 8, borderBottomWidth: 1, borderColor: '#ddd', alignItems: 'center' },
+  header: { backgroundColor: '#f3f4f6', borderBottomWidth: 1, borderColor: '#ccc' },
+  col: {
+    paddingHorizontal: 4,
     fontSize: 14,
-    fontWeight: '500',
     color: '#111827',
   },
-  materialQtd: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  cell: {
-    flex: 1,
-    fontSize: 14,
-    textAlign: 'right',
-    color: '#111827',
-  },
-  emptyText: {
-    textAlign: 'center',
-    color: '#6B7280',
-    marginTop: 16,
-  },
-  footerButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-evenly',
-    marginTop: 16,
-  },
-  footerButton: {
-    borderWidth: 1,
-    borderColor: '#6366F1',
-    borderRadius: 999,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-  },
-  footerButtonText: {
-    color: '#4F46E5',
-    fontWeight: '500',
-  },
+  lowStock: { backgroundColor: '#fee2e2' },
 });
