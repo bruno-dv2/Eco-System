@@ -78,25 +78,26 @@ const App: React.FC = () => {
 
   return (
     <AuthProvider>
-      <NavigationContainer>
-        <Stack.Navigator initialRouteName="Dashboard">
-          <Stack.Screen name="Welcome" component={WelcomeScreen} />
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Registro" component={RegistroScreen} />
-          <Stack.Screen name="RecuperarSenha" component={RecuperarSenhaScreen} />
-          <Stack.Screen
-			  name="Dashboard"
-			  component={DashboardScreen}
-			  options={{
-			    headerShown: false, // remove o header padrão do Stack
-			  }}
-			/>          <Stack.Screen name="AlterarSenha" component={AlterarSenhaScreen} />
-          <Stack.Screen name="Materiais" component={MateriaisScreen} />
-          <Stack.Screen name="Estoque" component={EstoqueScreen} />
-          <Stack.Screen name="EntradaMaterial" component={EntradaMaterialScreen} />
-          <Stack.Screen name="SaidaMaterial" component={SaidaMaterialScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
+      <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+        <NavigationContainer>
+          <Stack.Navigator initialRouteName="Dashboard">
+            <Stack.Screen name="Welcome" component={WelcomeScreen} />
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Registro" component={RegistroScreen} />
+            <Stack.Screen name="RecuperarSenha" component={RecuperarSenhaScreen} />
+            <Stack.Screen
+              name="Dashboard"
+              component={DashboardScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen name="AlterarSenha" component={AlterarSenhaScreen} />
+            <Stack.Screen name="Materiais" component={MateriaisScreen} />
+            <Stack.Screen name="Estoque" component={EstoqueScreen} />
+            <Stack.Screen name="EntradaMaterial" component={EntradaMaterialScreen} />
+            <Stack.Screen name="SaidaMaterial" component={SaidaMaterialScreen} />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </View>
     </AuthProvider>
   );
 };
