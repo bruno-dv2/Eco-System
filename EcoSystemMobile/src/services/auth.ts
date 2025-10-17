@@ -27,7 +27,15 @@ export const authService = {
     } finally {
       await AsyncStorage.removeItem('token');
     }
-  }
+  },
+
+  async alterarSenha(senhaAtual: string, novaSenha: string): Promise<{ mensagem: string }> {
+    const response = await api.put<{ mensagem: string }>('/auth/alterar-senha', {
+      senhaAtual,
+      novaSenha
+    });
+    return response.data;
+  },
   
 };
 
