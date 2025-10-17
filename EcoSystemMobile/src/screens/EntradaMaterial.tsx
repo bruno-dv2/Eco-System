@@ -234,7 +234,7 @@ export default function EntradaMaterial() {
             onPress={() => navigation.navigate("Dashboard")}
             disabled={saving}
           >
-            <Text style={styles.buttonText}>Cancelar</Text>
+            <Text style={styles.buttonText1}>Cancelar</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -309,9 +309,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginHorizontal: 4,
   },
-  saveButton: { backgroundColor: "#4CAF50" },
-  cancelButton: { backgroundColor: "#F44336" },
+  saveButton: { backgroundColor: "#3B82F6" },
+  cancelButton: {borderColor: "#3B82F6", borderWidth: 1 },
   buttonText: { color: "#fff", fontWeight: "bold" },
+  buttonText1: { color: "#3B82F6", fontWeight: "bold" },
   buttonDisabled: { opacity: 0.6 },
   errorBox: {
     backgroundColor: "#FEE2E2",
