@@ -265,6 +265,7 @@ export default function EntradaMaterial() {
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: "#EFF6FF",
     padding: 16,
     paddingBottom: 32,
   },
