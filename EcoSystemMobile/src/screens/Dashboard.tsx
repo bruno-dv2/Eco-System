@@ -62,6 +62,7 @@ export default function Dashboard() {
   const [saldos, setSaldos] = useState<SaldoMaterial[]>([]);
   const [materiais, setMateriais] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
+  const [manualLoading, setManualLoading] = useState(false);
   const [erro, setErro] = useState('');
 
   const { logout, usuario } = useAuth();
@@ -84,7 +85,13 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    carregarDados();
+    carregarDados(); // primeira carga
+
+    const interval = setInterval(() => {
+      carregarDados(); // recarrega a cada 10s
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleLogout = async () => {
@@ -96,8 +103,17 @@ export default function Dashboard() {
     });
   };
 
+  const handleManualRefresh = async () => {
+    try {
+      setManualLoading(true);
+      await carregarDados();
+    } finally {
+      setManualLoading(false);
+    }
+  };
+
   const PainelContent = () => {
-    if (loading) {
+    if (loading && !manualLoading) {
       return (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color="#6366F1" />
@@ -118,6 +134,24 @@ export default function Dashboard() {
             <Text style={styles.errorText}>{erro}</Text>
           </View>
         )}
+
+        {/* Botão de atualizar */}
+        <View style={styles.refreshContainer}>
+          <TouchableOpacity
+            style={[styles.refreshButton, manualLoading && styles.refreshButtonDisabled]}
+            onPress={handleManualRefresh}
+            disabled={manualLoading}
+          >
+            {manualLoading ? (
+              <ActivityIndicator color="#3B82F6" size="small" />
+            ) : (
+              <>
+                <Feather name="refresh-ccw" size={18} color="#3B82F6" />
+                <Text style={styles.refreshText}>Atualizar agora</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
 
         <DashboardCard
           title="Total de Materiais"
@@ -143,8 +177,8 @@ export default function Dashboard() {
           title="Itens em Baixa"
           value={itensBaixa}
           iconName="alert-triangle"
-          iconBg="#f9fee2ff"
-          iconColor="#b9ce1eff"
+          iconBg="#FEF9C3"
+          iconColor="#CA8A04"
           onPressLink={() => setActiveTab('Estoque')}
           linkText="Verificar →"
         />
@@ -187,6 +221,7 @@ export default function Dashboard() {
         </TouchableOpacity>
       </View>
 
+      {/* Modal de usuário */}
       <Modal
         visible={showUserMenu}
         transparent
@@ -230,6 +265,7 @@ export default function Dashboard() {
 
       <View style={styles.content}>{renderContent()}</View>
 
+      {/* Abas inferiores */}
       <View style={styles.tabs}>
         {['Painel', 'Materiais', 'Estoque'].map(tab => (
           <TouchableOpacity
@@ -281,4 +317,8 @@ const styles = StyleSheet.create({
   logoutText: { fontSize: 16, color: '#EF4444', marginLeft: 12, fontWeight: '600' },
   errorBox: { backgroundColor: '#FEE2E2', marginHorizontal: 16, borderRadius: 12, padding: 12, marginBottom: 16 },
   errorText: { color: '#B91C1C', fontWeight: '500' },
+  refreshContainer: { alignItems: 'flex-end', marginHorizontal: 16, marginBottom: 8 , marginTop: 10},
+  refreshButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#3B82F6', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 999 },
+  refreshButtonDisabled: { opacity: 0.6 },
+  refreshText: { color: '#3B82F6', fontWeight: '500', marginLeft: 6, fontSize: 14 },
 });
