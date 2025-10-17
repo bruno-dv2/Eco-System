@@ -35,6 +35,7 @@ export default function EntradaMaterial() {
   const [open, setOpen] = useState(false);
   const [materialId, setMaterialId] = useState<number | null>(null);
   const [items, setItems] = useState<{ label: string; value: number }[]>([]);
+  const [dropdownWidth, setDropdownWidth] = useState<number | null>(null);
   const [quantidade, setQuantidade] = useState("");
   const [preco, setPreco] = useState("");
   const [errors, setErrors] = useState({
@@ -154,27 +155,39 @@ export default function EntradaMaterial() {
 
         {/* Seletor de material */}
         <Text style={styles.label}>Material</Text>
-        <DropDownPicker
-          open={open}
-          value={materialId}
-          items={items}
-          setOpen={setOpen}
-          setValue={setMaterialId}
-          setItems={setItems}
-          searchable
-          placeholder="Selecione um material..."
-          searchPlaceholder="Pesquisar material..."
-          disabled={saving}
-          style={[
-            styles.dropdown,
-            errors.materialId && { borderColor: "red", backgroundColor: "#ffeaea" },
-          ]}
-          dropDownContainerStyle={styles.dropdownContainer}
-          listMode="MODAL"
-          modalTitle="Selecionar Material"
-          modalProps={{ animationType: "slide" }}
-          modalContentContainerStyle={{ backgroundColor: "#fff" }}
-        />
+        <View
+          style={[styles.dropdownWrapper, dropdownWidth ? { width: dropdownWidth } : { width: "100%" }]}
+          onLayout={(e) => setDropdownWidth(e.nativeEvent.layout.width)}
+        >
+          <DropDownPicker
+            open={open}
+            value={materialId}
+            items={items}
+            setOpen={setOpen}
+            setValue={setMaterialId}
+            setItems={setItems}
+            searchable
+            placeholder="Selecione um material..."
+            searchPlaceholder="Pesquisar material..."
+            disabled={saving}
+            style={[
+              styles.dropdown,
+              errors.materialId && { borderColor: "red", backgroundColor: "#ffeaea" },
+            ]}
+            // Abre a lista abaixo do input e usa a largura medida
+            listMode="SCROLLVIEW"
+            dropDownDirection="BOTTOM"
+            containerStyle={{ width: "100%", position: "relative" }}
+            // Tornar o container absoluto para sobrepor outros inputs
+            dropDownContainerStyle={[
+              styles.dropdownContainer,
+              dropdownWidth
+                ? { position: "absolute", top: 50, left: 0, width: dropdownWidth, zIndex: 3000, elevation: 3000 }
+                : { position: "absolute", top: 50, left: 0, width: "100%", zIndex: 3000, elevation: 3000 },
+            ]}
+          />
+        </View>
+
         {errors.materialId && (
           <Text style={styles.errorText}>Selecione o material</Text>
         )}
@@ -284,10 +297,17 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     backgroundColor: "#fff",
     minHeight: 44,
+    zIndex: 2000,
   },
   dropdownContainer: {
     borderColor: "#ccc",
     borderRadius: 10,
+    // zIndex/elevation aplicados dinamicamente no dropDownContainerStyle
+  },
+  dropdownWrapper: {
+    position: "relative", // necessário para que o dropDownContainer absoluto seja posicionado em relação a este wrapper
+    zIndex: 2000,
+    elevation: 2000, // Android
   },
   input: {
     borderWidth: 1,

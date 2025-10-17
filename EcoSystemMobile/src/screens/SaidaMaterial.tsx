@@ -183,11 +183,12 @@ const SaidaMaterial: React.FC = () => {
             styles.dropdown,
             errors.materialId && { borderColor: "red", backgroundColor: "#ffeaea" },
           ]}
-          dropDownContainerStyle={styles.dropdownContainer}
-          listMode="MODAL"
-          modalTitle="Selecionar Material"
-          modalProps={{ animationType: "slide" }}
-          modalContentContainerStyle={{ backgroundColor: "#fff" }}
+          // Ajustado: renderiza a lista inline abaixo do input e com mesma largura
+          listMode="SCROLLVIEW"
+          dropDownDirection="BOTTOM"
+          containerStyle={{ width: "100%" }}
+          dropDownContainerStyle={[styles.dropdownContainer, { width: "100%", marginTop: 4 }]}
+          // removido: modalTitle, modalProps, modalContentContainerStyle
         />
         {errors.materialId && (
           <Text style={styles.errorText}>Selecione o material</Text>
@@ -282,6 +283,7 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     borderRadius: 10,
     zIndex: 2,
+    // mantemos estilos base; largura agora aplicada inline para garantir alinhamento
   },
   input: {
     borderWidth: 1,
