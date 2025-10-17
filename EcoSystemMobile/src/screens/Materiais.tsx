@@ -38,15 +38,28 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
   const [nome, setNome] = useState(nomeInicial);
   const [descricao, setDescricao] = useState(descricaoInicial);
   const [unidade, setUnidade] = useState(unidadeInicial);
+  const [errors, setErrors] = useState({ nome: false, descricao: false, unidade: false });
 
   useEffect(() => {
     setNome(nomeInicial);
     setDescricao(descricaoInicial);
     setUnidade(unidadeInicial);
+    setErrors({ nome: false, descricao: false, unidade: false });
   }, [nomeInicial, descricaoInicial, unidadeInicial, visible]);
 
   const handleSubmit = () => {
-    if (!nome.trim() || !descricao.trim() || !unidade.trim()) return;
+    const newErrors = {
+      nome: !nome.trim(),
+      descricao: !descricao.trim(),
+      unidade: !unidade.trim(),
+    };
+    setErrors(newErrors);
+
+    if (Object.values(newErrors).includes(true)) {
+      Alert.alert('Atenção', 'Preencha todos os campos antes de continuar.');
+      return;
+    }
+
     onSubmit(nome, descricao, unidade);
     setNome('');
     setDescricao('');
@@ -70,22 +83,50 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
           </View>
 
           <View style={[styles.card, { marginTop: 16 }]}>
-            {['Nome', 'Descrição', 'Unidade'].map((label) => {
-              const valueMap: any = { Nome: nome, Descrição: descricao, Unidade: unidade };
-              const setterMap: any = { Nome: setNome, Descrição: setDescricao, Unidade: setUnidade };
-              const placeholderMap: any = { Nome: 'Nome do material', Descrição: 'Descrição', Unidade: 'Kg' };
-              return (
-                <View style={styles.inputGroup} key={label}>
-                  <Text style={styles.label}>{label}</Text>
-                  <TextInput
-                    style={styles.inputCard}
-                    placeholder={placeholderMap[label]}
-                    value={valueMap[label]}
-                    onChangeText={setterMap[label]}
-                  />
-                </View>
-              );
-            })}
+            {/* Nome */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Nome</Text>
+              <TextInput
+                style={[styles.inputCard, errors.nome && styles.inputError]}
+                placeholder="Nome do material"
+                value={nome}
+                onChangeText={(t) => {
+                  setNome(t);
+                  if (t.trim()) setErrors((e) => ({ ...e, nome: false }));
+                }}
+              />
+              {errors.nome && <Text style={styles.errorText}>Campo obrigatório</Text>}
+            </View>
+
+            {/* Descrição */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Descrição</Text>
+              <TextInput
+                style={[styles.inputCard, errors.descricao && styles.inputError]}
+                placeholder="Descrição"
+                value={descricao}
+                onChangeText={(t) => {
+                  setDescricao(t);
+                  if (t.trim()) setErrors((e) => ({ ...e, descricao: false }));
+                }}
+              />
+              {errors.descricao && <Text style={styles.errorText}>Campo obrigatório</Text>}
+            </View>
+
+            {/* Unidade */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Unidade</Text>
+              <TextInput
+                style={[styles.inputCard, errors.unidade && styles.inputError]}
+                placeholder="Kg, Un, L..."
+                value={unidade}
+                onChangeText={(t) => {
+                  setUnidade(t);
+                  if (t.trim()) setErrors((e) => ({ ...e, unidade: false }));
+                }}
+              />
+              {errors.unidade && <Text style={styles.errorText}>Campo obrigatório</Text>}
+            </View>
 
             <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
               <Text style={styles.submitButtonText}>
@@ -113,7 +154,10 @@ export default function Materiais() {
   const carregarDados = async () => {
     setLoading(true);
     try {
-      const [materiaisData, saldosData] = await Promise.all([materialService.listar(), estoqueService.consultarSaldo()]);
+      const [materiaisData, saldosData] = await Promise.all([
+        materialService.listar(),
+        estoqueService.consultarSaldo(),
+      ]);
       setMateriais(materiaisData);
       setSaldos(saldosData);
       setErro('');
@@ -146,7 +190,11 @@ export default function Materiais() {
       resetForm();
       setTimeout(() => setSucesso(''), 3000);
     } catch (error: any) {
-      setErro(error.message.includes('already exists') ? 'Já existe um material cadastrado com este nome' : `Falha ao ${editarMaterial ? 'atualizar' : 'criar'} material`);
+      setErro(
+        error.message.includes('already exists')
+          ? 'Já existe um material cadastrado com este nome'
+          : `Falha ao ${editarMaterial ? 'atualizar' : 'criar'} material`
+      );
     }
   };
 
@@ -178,16 +226,17 @@ export default function Materiais() {
     ]);
   };
 
-  const materiaisFiltrados = materiais.filter((m) => m.nome.toLowerCase().includes(search.toLowerCase()));
+  const materiaisFiltrados = materiais.filter((m) =>
+    m.nome.toLowerCase().includes(search.toLowerCase())
+  );
 
-  if (loading) return <ActivityIndicator size="large" color="#2563EB" style={{ flex: 1 }} />;
-{/* Cabeçalho */}
-      <Text style={styles.title}>Controle de Estoque</Text>
+  if (loading)
+    return <ActivityIndicator size="large" color="#2563EB" style={{ flex: 1, marginTop: 40 }} />;
+
   const renderItem = ({ item }: { item: Material }) => {
     const saldo = saldos.find((s) => s.material === item.nome)?.quantidade || 0;
     return (
       <View style={styles.item}>
-        
         <Text style={styles.nome}>{item.nome}</Text>
         <Text style={styles.descricao}>{item.descricao || '-'}</Text>
         <Text style={styles.unidade}>{item.unidade}</Text>
@@ -195,7 +244,11 @@ export default function Materiais() {
           <TouchableOpacity style={styles.botaoIcon} onPress={() => abrirModalEditar(item)}>
             <Feather name="edit" size={20} color="#2563EB" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.botaoIcon} onPress={() => excluirMaterial(item)} disabled={saldo > 0}>
+          <TouchableOpacity
+            style={styles.botaoIcon}
+            onPress={() => excluirMaterial(item)}
+            disabled={saldo > 0}
+          >
             <Feather name="trash-2" size={20} color={saldo > 0 ? '#999' : '#ef4444'} />
           </TouchableOpacity>
         </View>
@@ -206,9 +259,15 @@ export default function Materiais() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Materiais</Text>
+
       <View style={styles.header}>
         <Feather name="search" size={20} color="#000" style={{ marginRight: 8 }} />
-        <TextInput style={styles.input} placeholder="Pesquisar" value={search} onChangeText={setSearch} />
+        <TextInput
+          style={styles.input}
+          placeholder="Pesquisar"
+          value={search}
+          onChangeText={setSearch}
+        />
       </View>
 
       {erro ? <Text style={styles.msgErro}>{erro}</Text> : null}
@@ -229,7 +288,6 @@ export default function Materiais() {
         }
       />
 
-      {/* Botão fixo simples */}
       <TouchableOpacity style={styles.fab} onPress={() => setModalVisible(true)}>
         <Feather name="plus" size={30} color="#fff" />
       </TouchableOpacity>
@@ -262,30 +320,103 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     backgroundColor: '#fff',
   },
-   title: { fontSize: 22, fontWeight: 'bold', marginBottom: 12 },
+  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 12 },
   input: { flex: 1, height: 40 },
-  msgErro: { backgroundColor: '#fee2e2', color: '#b91c1c', padding: 8, borderRadius: 4, marginBottom: 8 },
-  msgSucesso: { backgroundColor: '#d1fae5', color: '#065f46', padding: 8, borderRadius: 4, marginBottom: 8 },
-  cabecalho: { flexDirection: 'row', paddingVertical: 8, borderBottomWidth: 1, borderColor: '#ccc' },
+  msgErro: {
+    backgroundColor: '#fee2e2',
+    color: '#b91c1c',
+    padding: 8,
+    borderRadius: 4,
+    marginBottom: 8,
+  },
+  msgSucesso: {
+    backgroundColor: '#d1fae5',
+    color: '#065f46',
+    padding: 8,
+    borderRadius: 4,
+    marginBottom: 8,
+  },
+  cabecalho: {
+    flexDirection: 'row',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderColor: '#ccc',
+  },
   colNome: { flex: 2, fontWeight: 'bold' },
   colDescricao: { flex: 2, fontWeight: 'bold' },
   colUnidade: { flex: 1, fontWeight: 'bold' },
   colAcao: { flex: 1, fontWeight: 'bold', textAlign: 'center' },
-  item: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8, backgroundColor: '#fff', borderRadius: 6, marginBottom: 8, borderWidth: 1, borderColor: '#ddd' },
+  item: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    backgroundColor: '#fff',
+    borderRadius: 6,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
   nome: { flex: 2 },
   descricao: { flex: 2 },
   unidade: { flex: 1 },
-  botoes: { flex: 1, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' },
+  botoes: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
   botaoIcon: { padding: 6, borderRadius: 4 },
-  fab: { position: 'absolute', bottom: 24, right: 24, backgroundColor: '#2563EB', width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center', elevation: 5, shadowColor: '#000', shadowOpacity: 0.3, shadowOffset: { width: 0, height: 2 }, shadowRadius: 4 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
-  modalContainer: { backgroundColor: '#fff', width: '85%', borderRadius: 10, padding: 16, elevation: 5 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, borderColor: '#eee', paddingBottom: 8 },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    backgroundColor: '#2563EB',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    backgroundColor: '#fff',
+    width: '85%',
+    borderRadius: 10,
+    padding: 16,
+    elevation: 5,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderColor: '#eee',
+    paddingBottom: 8,
+  },
   modalTitle: { fontSize: 18, fontWeight: 'bold' },
   card: { backgroundColor: '#f9fafb', padding: 16, borderRadius: 8 },
   inputGroup: { marginBottom: 12 },
   label: { marginBottom: 4, fontWeight: '600' },
   inputCard: { borderWidth: 1, borderColor: '#ccc', borderRadius: 4, padding: 8 },
-  submitButton: { backgroundColor: '#2563EB', padding: 12, borderRadius: 6, alignItems: 'center', marginTop: 8 },
+  inputError: { borderColor: 'red', backgroundColor: '#ffeaea' },
+  errorText: { color: 'red', fontSize: 12, marginTop: 2 },
+  submitButton: {
+    backgroundColor: '#2563EB',
+    padding: 12,
+    borderRadius: 6,
+    alignItems: 'center',
+    marginTop: 8,
+  },
   submitButtonText: { color: '#fff', fontWeight: '600' },
 });
