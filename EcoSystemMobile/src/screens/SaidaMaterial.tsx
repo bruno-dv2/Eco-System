@@ -10,11 +10,13 @@ import {
   Alert,
 } from "react-native";
 import DropDownPicker from "react-native-dropdown-picker";
+import { useNavigation } from "@react-navigation/native";
 import { Material, MovimentacaoSaida, SaldoMaterial } from "../types";
 import { materialService } from "../services/material";
 import { estoqueService } from "../services/estoque";
 
 const SaidaMaterial: React.FC = () => {
+  const navigation = useNavigation<any>();
   const [materiais, setMateriais] = useState<Material[]>([]);
   const [saldos, setSaldos] = useState<SaldoMaterial[]>([]);
   const [loading, setLoading] = useState(true);
@@ -118,10 +120,7 @@ const SaidaMaterial: React.FC = () => {
   };
 
   const handleCancel = () => {
-    setErro("");
-    setSucesso(false);
-    setQuantidade("");
-    setMaterialId(null);
+    navigation.navigate("Dashboard");
   };
 
   // 🔹 Loading inicial
