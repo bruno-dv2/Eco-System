@@ -21,6 +21,13 @@ export default function Materiais() {
   const [descricao, setDescricao] = useState("");
   const [unidade, setUnidade] = useState("");
 
+  // Estados de erro dos campos
+  const [errors, setErrors] = useState({
+    nome: false,
+    descricao: false,
+    unidade: false,
+  });
+
   // 🔹 Buscar materiais ao carregar a tela
   useEffect(() => {
     carregarMateriais();
@@ -42,6 +49,7 @@ export default function Materiais() {
     setNome("");
     setDescricao("");
     setUnidade("");
+    setErrors({ nome: false, descricao: false, unidade: false });
     setModalVisible(true);
   }
 
@@ -49,13 +57,28 @@ export default function Materiais() {
   function abrirModalEditar(material: Material) {
     setEditingMaterial(material);
     setNome(material.nome);
-    setDescricao(material.descricao);
+    setDescricao(material.descricao || "");
     setUnidade(material.unidade);
+    setErrors({ nome: false, descricao: false, unidade: false });
     setModalVisible(true);
   }
 
   // 🔹 Criar ou atualizar material
   async function salvarMaterial() {
+    // ✅ Verificar campos e marcar erros
+    const novosErros = {
+      nome: !nome.trim(),
+      descricao: !descricao.trim(),
+      unidade: !unidade.trim(),
+    };
+    setErrors(novosErros);
+
+    // Se algum campo estiver vazio, interrompe o envio
+    if (Object.values(novosErros).includes(true)) {
+      Alert.alert("Atenção", "Preencha todos os campos obrigatórios.");
+      return;
+    }
+
     try {
       if (editingMaterial) {
         await materialService.atualizar(editingMaterial.id, {
@@ -140,24 +163,50 @@ export default function Materiais() {
               {editingMaterial ? "Editar Material" : "Novo Material"}
             </Text>
 
+            {/* Campo nome */}
             <TextInput
               placeholder="Nome"
-              style={styles.input}
+              style={[
+                styles.input,
+                errors.nome && { borderColor: "red", backgroundColor: "#ffeaea" },
+              ]}
               value={nome}
-              onChangeText={setNome}
+              onChangeText={(text) => {
+                setNome(text);
+                if (text.trim()) setErrors((e) => ({ ...e, nome: false }));
+              }}
             />
+            {errors.nome && <Text style={styles.errorText}>Campo obrigatório</Text>}
+
+            {/* Campo descrição */}
             <TextInput
               placeholder="Descrição"
-              style={styles.input}
+              style={[
+                styles.input,
+                errors.descricao && { borderColor: "red", backgroundColor: "#ffeaea" },
+              ]}
               value={descricao}
-              onChangeText={setDescricao}
+              onChangeText={(text) => {
+                setDescricao(text);
+                if (text.trim()) setErrors((e) => ({ ...e, descricao: false }));
+              }}
             />
+            {errors.descricao && <Text style={styles.errorText}>Campo obrigatório</Text>}
+
+            {/* Campo unidade */}
             <TextInput
               placeholder="Unidade"
-              style={styles.input}
+              style={[
+                styles.input,
+                errors.unidade && { borderColor: "red", backgroundColor: "#ffeaea" },
+              ]}
               value={unidade}
-              onChangeText={setUnidade}
+              onChangeText={(text) => {
+                setUnidade(text);
+                if (text.trim()) setErrors((e) => ({ ...e, unidade: false }));
+              }}
             />
+            {errors.unidade && <Text style={styles.errorText}>Campo obrigatório</Text>}
 
             <View style={styles.modalBotoes}>
               <TouchableOpacity
@@ -194,11 +243,7 @@ const styles = StyleSheet.create({
   nome: { fontSize: 18, fontWeight: "bold" },
   descricao: { color: "#555" },
   unidade: { color: "#888", fontSize: 13 },
-  botao: {
-    padding: 8,
-    borderRadius: 6,
-    marginLeft: 6,
-  },
+  botao: { padding: 8, borderRadius: 6, marginLeft: 6 },
   botaoEditar: { backgroundColor: "#4CAF50" },
   botaoExcluir: { backgroundColor: "#F44336" },
   botaoNovo: {
@@ -226,9 +271,10 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     borderRadius: 8,
     padding: 10,
-    marginBottom: 10,
+    marginBottom: 4,
   },
-  modalBotoes: { flexDirection: "row", justifyContent: "space-between" },
+  modalBotoes: { flexDirection: "row", justifyContent: "space-between", marginTop: 10 },
   botaoSalvar: { backgroundColor: "#4CAF50", flex: 1, marginRight: 5 },
   botaoCancelar: { backgroundColor: "#F44336", flex: 1, marginLeft: 5 },
+  errorText: { color: "red", fontSize: 12, marginBottom: 8 },
 });
