@@ -118,6 +118,71 @@ export class UsuarioController {
     }
   }
 
+  async alterarSenha(req: Request & { usuarioId?: number }, res: Response): Promise<void> {
+    try {
+      const usuarioId = req.usuarioId;
+      const { senhaAtual, novaSenha } = req.body;
+
+      if (!usuarioId) {
+        res.status(401).json({ erro: 'Usuário não autenticado' });
+        return;
+      }
+
+      // Validações
+      if (!senhaAtual || !novaSenha) {
+        res.status(400).json({ erro: 'Senha atual e nova senha são obrigatórias' });
+        return;
+      }
+
+      if (novaSenha.length < 8) {
+        res.status(400).json({ erro: 'A nova senha deve ter no mínimo 8 caracteres' });
+        return;
+      }
+
+      // Buscar usuário
+      const usuario = await prisma.usuario.findUnique({
+        where: { id: usuarioId }
+      });
+
+      if (!usuario) {
+        res.status(404).json({ erro: 'Usuário não encontrado' });
+        return;
+      }
+
+      // Verificar senha atual
+      const senhaValida = await bcrypt.compare(senhaAtual, usuario.senha);
+      
+      if (!senhaValida) {
+        res.status(401).json({ erro: 'Senha atual incorreta' });
+        return;
+      }
+
+      // Verificar se a nova senha é diferente da atual
+      const senhaIgual = await bcrypt.compare(novaSenha, usuario.senha);
+      
+      if (senhaIgual) {
+        res.status(400).json({ erro: 'A nova senha deve ser diferente da senha atual' });
+        return;
+      }
+
+      // Atualizar senha
+      const novaSenhaHash = await bcrypt.hash(novaSenha, 8);
+      
+      await prisma.usuario.update({
+        where: { id: usuarioId },
+        data: {
+          senha: novaSenhaHash,
+          dataAtualizacao: new Date()
+        }
+      });
+
+      res.json({ mensagem: 'Senha alterada com sucesso' });
+    } catch (error) {
+      console.error('Erro ao alterar senha:', error);
+      res.status(500).json({ erro: 'Erro ao alterar senha' });
+    }
+  }
+
   // Recuperação de senha enviando nova senha gerada
   async recuperacao(req: Request, res: Response): Promise<void> {
     const { email } = req.body;
