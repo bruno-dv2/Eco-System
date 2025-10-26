@@ -81,7 +81,7 @@ const App: React.FC = () => {
     <AuthProvider>
       <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
         <NavigationContainer>
-          <Stack.Navigator initialRouteName="Dashboard">
+          <Stack.Navigator initialRouteName="Welcome">
             <Stack.Screen name="Welcome" component={WelcomeScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Registro" component={RegistroScreen} />
