@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,19 +7,22 @@ import {
   Modal,
   ScrollView,
   ActivityIndicator,
-} from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Feather } from "@expo/vector-icons";
 
-import { useAuth } from '../contexts/AuthContext';
-import { estoqueService } from '../services/estoque';
-import { materialService } from '../services/material';
-import { SaldoMaterial, Material } from '../types';
-import { formatCurrency } from '../utils/currency';
+import { useAuth } from "../contexts/AuthContext";
+import { estoqueService } from "../services/estoque";
+import { materialService } from "../services/material";
+import { SaldoMaterial, Material } from "../types";
+import { formatCurrency } from "../utils/currency";
 
-import Materiais from './Materiais';
-import Estoque from './Estoque';
+import Materiais from "./Materiais";
+import Estoque from "./Estoque";
+
+// 🎨 Importa o tema global
+import { COLORS, SIZES } from "../constants/theme";
 
 interface DashboardCardProps {
   title: string;
@@ -57,12 +60,14 @@ const DashboardCard: React.FC<DashboardCardProps> = ({
 );
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<'Painel' | 'Materiais' | 'Estoque'>('Painel');
+  const [activeTab, setActiveTab] = useState<
+    "Painel" | "Materiais" | "Estoque"
+  >("Painel");
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [saldos, setSaldos] = useState<SaldoMaterial[]>([]);
   const [materiais, setMateriais] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
-  const [erro, setErro] = useState('');
+  const [erro, setErro] = useState("");
 
   const { logout, usuario } = useAuth();
   const navigation = useNavigation<any>();
@@ -75,9 +80,9 @@ export default function Dashboard() {
       ]);
       setSaldos(saldosData);
       setMateriais(materiaisData);
-      setErro('');
+      setErro("");
     } catch {
-      setErro('Falha ao carregar dados');
+      setErro("Falha ao carregar dados");
     } finally {
       setLoading(false);
     }
@@ -92,7 +97,7 @@ export default function Dashboard() {
     await logout();
     navigation.reset({
       index: 0,
-      routes: [{ name: 'Welcome' }],
+      routes: [{ name: "Welcome" }],
     });
   };
 
@@ -100,16 +105,19 @@ export default function Dashboard() {
     if (loading) {
       return (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#6366F1" />
+          <ActivityIndicator size="large" color={COLORS.primary} />
           <Text style={styles.loadingText}>Carregando...</Text>
         </View>
       );
     }
 
     const valorTotalEstoque = formatCurrency(
-      saldos.reduce((total, saldo) => total + saldo.quantidade * saldo.precoMedio, 0)
+      saldos.reduce(
+        (total, saldo) => total + saldo.quantidade * saldo.precoMedio,
+        0
+      )
     );
-    const itensBaixa = saldos.filter(saldo => saldo.quantidade < 10).length;
+    const itensBaixa = saldos.filter((saldo) => saldo.quantidade < 10).length;
 
     return (
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
@@ -123,9 +131,9 @@ export default function Dashboard() {
           title="Total de Materiais"
           value={materiais.length}
           iconName="box"
-          iconBg="#DBEAFE"
-          iconColor="#3B82F6"
-          onPressLink={() => setActiveTab('Materiais')}
+          iconBg={COLORS.surface}
+          iconColor={COLORS.secondary}
+          onPressLink={() => setActiveTab("Materiais")}
           linkText="Ver todos →"
         />
 
@@ -133,9 +141,9 @@ export default function Dashboard() {
           title="Valor Total em Estoque"
           value={valorTotalEstoque}
           iconName="dollar-sign"
-          iconBg="#DCFCE7"
-          iconColor="#22C55E"
-          onPressLink={() => setActiveTab('Estoque')}
+          iconBg={COLORS.surface}
+          iconColor={COLORS.success}
+          onPressLink={() => setActiveTab("Estoque")}
           linkText="Ver estoque →"
         />
 
@@ -143,26 +151,26 @@ export default function Dashboard() {
           title="Itens em Baixa"
           value={itensBaixa}
           iconName="alert-triangle"
-          iconBg="#f9fee2ff"
-          iconColor="#b9ce1eff"
-          onPressLink={() => setActiveTab('Estoque')}
+          iconBg={COLORS.surface}
+          iconColor={COLORS.warning}
+          onPressLink={() => setActiveTab("Estoque")}
           linkText="Verificar →"
         />
 
         <View style={styles.actionsContainer}>
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => navigation.navigate('EntradaMaterial')}
+            onPress={() => navigation.navigate("EntradaMaterial")}
           >
-            <Feather name="inbox" size={20} color="#3B82F6" />
+            <Feather name="inbox" size={20} color={COLORS.secondary} />
             <Text style={styles.actionText}>Registrar Entrada</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => navigation.navigate('SaidaMaterial')}
+            onPress={() => navigation.navigate("SaidaMaterial")}
           >
-            <Feather name="arrow-up-right" size={20} color="#3B82F6" />
+            <Feather name="arrow-up-right" size={20} color={COLORS.secondary} />
             <Text style={styles.actionText}>Registrar Saída</Text>
           </TouchableOpacity>
         </View>
@@ -171,18 +179,23 @@ export default function Dashboard() {
   };
 
   const renderContent = () => {
-    if (activeTab === 'Materiais') return <Materiais />;
-    if (activeTab === 'Estoque') return <Estoque />;
+    if (activeTab === "Materiais") return <Materiais />;
+    if (activeTab === "Estoque") return <Estoque />;
     return <PainelContent />;
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <Text style={styles.welcomeText}>Olá, {usuario?.nome || 'Usuário'}!</Text>
-        <TouchableOpacity style={styles.avatarButton} onPress={() => setShowUserMenu(true)}>
+        <Text style={styles.welcomeText}>
+          Olá, {usuario?.nome || "Usuário"}!
+        </Text>
+        <TouchableOpacity
+          style={styles.avatarButton}
+          onPress={() => setShowUserMenu(true)}
+        >
           <View style={styles.avatar}>
-            <Feather name="user" size={20} color="#4F46E5" />
+            <Feather name="user" size={20} color={COLORS.primary} />
           </View>
         </TouchableOpacity>
       </View>
@@ -201,7 +214,7 @@ export default function Dashboard() {
           <View style={styles.menuModal}>
             <View style={styles.menuHeader}>
               <View style={styles.menuAvatar}>
-                <Feather name="user" size={24} color="#4F46E5" />
+                <Feather name="user" size={24} color={COLORS.primary} />
               </View>
               <Text style={styles.menuUserName}>{usuario?.nome}</Text>
               <Text style={styles.menuUserEmail}>{usuario?.email}</Text>
@@ -213,15 +226,18 @@ export default function Dashboard() {
               style={styles.menuItem}
               onPress={() => {
                 setShowUserMenu(false);
-                navigation.navigate('AlterarSenha');
+                navigation.navigate("AlterarSenha");
               }}
             >
-              <Feather name="lock" size={20} color="#6B7280" />
+              <Feather name="lock" size={20} color={COLORS.textSecondary} />
               <Text style={styles.menuItemText}>Alterar senha</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.menuItem, styles.logoutItem]} onPress={handleLogout}>
-              <Feather name="log-out" size={20} color="#EF4444" />
+            <TouchableOpacity
+              style={[styles.menuItem, styles.logoutItem]}
+              onPress={handleLogout}
+            >
+              <Feather name="log-out" size={20} color={COLORS.error} />
               <Text style={styles.logoutText}>Sair</Text>
             </TouchableOpacity>
           </View>
@@ -231,13 +247,20 @@ export default function Dashboard() {
       <View style={styles.content}>{renderContent()}</View>
 
       <View style={styles.tabs}>
-        {['Painel', 'Materiais', 'Estoque'].map(tab => (
+        {["Painel", "Materiais", "Estoque"].map((tab) => (
           <TouchableOpacity
             key={tab}
             style={[styles.tabButton, activeTab === tab && styles.activeTab]}
             onPress={() => setActiveTab(tab as any)}
           >
-            <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>{tab}</Text>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === tab && styles.activeTabText,
+              ]}
+            >
+              {tab}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -246,39 +269,180 @@ export default function Dashboard() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#ffffffff' },
-  header: { backgroundColor: '#f3f5ffff', paddingVertical: 18, alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, shadowColor: '#000', shadowOffset: { width: 5, height: 5 }, shadowOpacity: 0.05, elevation: 9 },
-  welcomeText: { color: '#4F46E5', fontSize: 18, fontWeight: 'bold' },
+  safeArea: { flex: 1, backgroundColor: COLORS.background },
+  header: {
+    backgroundColor: COLORS.surface,
+    paddingVertical: SIZES.padding,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: SIZES.padding,
+    shadowColor: "#000",
+    shadowOffset: { width: 5, height: 5 },
+    shadowOpacity: 0.05,
+    elevation: 9,
+  },
+  welcomeText: {
+    color: COLORS.primary,
+    fontSize: SIZES.fontLarge,
+    fontWeight: "bold",
+  },
   avatarButton: {},
-  avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#EEF2FF', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#C7D2FE' },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.surface,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+  },
   content: { flex: 1 },
-  tabs: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 18, backgroundColor: '#F3F4F6', borderRadius: 999, overflow: 'hidden' },
-  tabButton: { flex: 1, paddingVertical: 10, alignItems: 'center' },
-  tabText: { color: '#6B7280', fontWeight: '500' },
-  activeTab: { backgroundColor: '#C7D2FE' },
-  activeTabText: { color: '#4F46E5' },
-  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  card: { backgroundColor: '#FFFFFF', padding: 16, marginHorizontal: 16, marginBottom: 16, borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
-  cardTitle: { fontSize: 14, color: '#6B7280', marginBottom: 4 },
-  cardValue: { fontSize: 28, fontWeight: '600', color: '#111827', marginTop: 8 },
-  cardLink: { color: '#4F46E5', fontWeight: '500', marginTop: 4 },
+  tabs: {
+    flexDirection: "row",
+    marginHorizontal: SIZES.padding,
+    marginBottom: SIZES.padding,
+    backgroundColor: COLORS.surface,
+    borderRadius: 999,
+    overflow: "hidden",
+  },
+  tabButton: { flex: 1, paddingVertical: 10, alignItems: "center" },
+  tabText: { color: COLORS.textSecondary, fontWeight: "500" },
+  activeTab: { backgroundColor: COLORS.border },
+  activeTabText: { color: COLORS.primary },
+  rowBetween: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  card: {
+    backgroundColor: COLORS.background,
+    padding: SIZES.padding,
+    marginHorizontal: SIZES.padding,
+    marginBottom: SIZES.padding,
+    borderRadius: SIZES.radius,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  cardTitle: {
+    fontSize: SIZES.fontSmall,
+    color: COLORS.textSecondary,
+    marginBottom: 4,
+  },
+  cardValue: {
+    fontSize: SIZES.fontXL,
+    fontWeight: "600",
+    color: COLORS.text,
+    marginTop: 8,
+  },
+  cardLink: { color: COLORS.primary, fontWeight: "500", marginTop: 4 },
   iconContainer: { padding: 8, borderRadius: 999 },
-  actionsContainer: { flexDirection: 'row', justifyContent: 'space-between', marginHorizontal: 16, marginBottom: 16 },
-  actionButton: { flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 12, marginHorizontal: 4, borderWidth: 1, borderColor: '#4F46E5', borderRadius: 999, backgroundColor: '#FFFFFF' },
-  actionText: { color: '#3B82F6', fontWeight: '500', marginLeft: 8 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: 8, fontSize: 16, color: '#374151' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-start', alignItems: 'flex-end', paddingTop: 60, paddingRight: 16 },
-  menuModal: { width: 280, backgroundColor: '#FFFFFF', borderRadius: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 8 },
-  menuHeader: { alignItems: 'center', paddingVertical: 20, paddingHorizontal: 16 },
-  menuAvatar: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#EEF2FF', justifyContent: 'center', alignItems: 'center', marginBottom: 12, borderWidth: 3, borderColor: '#C7D2FE' },
-  menuUserName: { fontSize: 18, fontWeight: '600', color: '#111827', marginBottom: 4 },
-  menuUserEmail: { fontSize: 14, color: '#6B7280' },
-  menuDivider: { height: 1, backgroundColor: '#E5E7EB', marginHorizontal: 16 },
-  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 20 },
-  menuItemText: { fontSize: 16, color: '#374151', marginLeft: 12, fontWeight: '500' },
-  logoutItem: { borderTopWidth: 1, borderTopColor: '#FEE2E2', backgroundColor: '#FEF2F2', borderBottomLeftRadius: 16, borderBottomRightRadius: 16 },
-  logoutText: { fontSize: 16, color: '#EF4444', marginLeft: 12, fontWeight: '600' },
-  errorBox: { backgroundColor: '#FEE2E2', marginHorizontal: 16, borderRadius: 12, padding: 12, marginBottom: 16 },
-  errorText: { color: '#B91C1C', fontWeight: '500' },
+  actionsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginHorizontal: SIZES.padding,
+    marginBottom: SIZES.padding,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 12,
+    marginHorizontal: 4,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    borderRadius: 999,
+    backgroundColor: COLORS.background,
+  },
+  actionText: { color: COLORS.secondary, fontWeight: "500", marginLeft: 8 },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+  loadingText: {
+    marginTop: 8,
+    fontSize: SIZES.fontMedium,
+    color: COLORS.textSecondary,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-start",
+    alignItems: "flex-end",
+    paddingTop: 60,
+    paddingRight: SIZES.padding,
+  },
+  menuModal: {
+    width: 280,
+    backgroundColor: COLORS.background,
+    borderRadius: SIZES.radius,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  menuHeader: {
+    alignItems: "center",
+    paddingVertical: 20,
+    paddingHorizontal: SIZES.padding,
+  },
+  menuAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: COLORS.surface,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+    borderWidth: 3,
+    borderColor: COLORS.primary,
+  },
+  menuUserName: {
+    fontSize: SIZES.fontLarge,
+    fontWeight: "600",
+    color: COLORS.text,
+    marginBottom: 4,
+  },
+  menuUserEmail: { fontSize: SIZES.fontSmall, color: COLORS.textSecondary },
+  menuDivider: {
+    height: 1,
+    backgroundColor: COLORS.border,
+    marginHorizontal: SIZES.padding,
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+  },
+  menuItemText: {
+    fontSize: SIZES.fontMedium,
+    color: COLORS.text,
+    marginLeft: 12,
+    fontWeight: "500",
+  },
+  logoutItem: {
+    borderTopWidth: 1,
+    borderTopColor: COLORS.error,
+    backgroundColor: COLORS.surface,
+    borderBottomLeftRadius: SIZES.radius,
+    borderBottomRightRadius: SIZES.radius,
+  },
+  logoutText: {
+    fontSize: SIZES.fontMedium,
+    color: COLORS.error,
+    marginLeft: 12,
+    fontWeight: "600",
+  },
+  errorBox: {
+    backgroundColor: COLORS.surface,
+    marginHorizontal: SIZES.padding,
+    borderRadius: SIZES.radius,
+    padding: SIZES.padding / 1.5,
+    marginBottom: SIZES.padding,
+  },
+  errorText: { color: COLORS.error, fontWeight: "500" },
 });
