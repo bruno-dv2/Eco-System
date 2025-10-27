@@ -10,6 +10,9 @@ RUN npm install
 # Copia o restante do código
 COPY . .
 
+# Copia o arquivo .env para dentro do container
+COPY .env .env
+
 # Gera a pasta dist/
 RUN npm run build
 
