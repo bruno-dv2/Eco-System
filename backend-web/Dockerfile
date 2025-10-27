@@ -13,6 +13,10 @@ COPY . .
 # Copia o arquivo .env para dentro do container
 COPY .env .env
 
+RUN npx prisma generate
+
+RUN npx prisma db pull
+
 # Gera a pasta dist/
 RUN npm run build
 
