@@ -43,6 +43,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               {usuario ? (
                 <div className="flex items-center space-x-4">
                   <span className="text-gray-700">{usuario.nome}</span>
+                  <Link
+                    to="/alterar-senha"
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    Alterar Senha
+                  </Link>
                   <button
                     onClick={handleLogout}
                     className="btn-secondary"

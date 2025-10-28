@@ -4,6 +4,7 @@ import { View, ActivityIndicator, StyleSheet, Image } from 'react-native';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import Toast from 'react-native-toast-message';
 
 import WelcomeScreen from './src/screens/Welcome';
 import LoginScreen from './src/screens/Login';
@@ -80,7 +81,7 @@ const App: React.FC = () => {
     <AuthProvider>
       <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
         <NavigationContainer>
-          <Stack.Navigator initialRouteName="Dashboard">
+          <Stack.Navigator initialRouteName="Welcome">
             <Stack.Screen name="Welcome" component={WelcomeScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Registro" component={RegistroScreen} />
@@ -90,16 +91,30 @@ const App: React.FC = () => {
               component={DashboardScreen}
               options={{ headerShown: false }}
             />
-            <Stack.Screen name="AlterarSenha" component={AlterarSenhaScreen} />
+            <Stack.Screen 
+              name="AlterarSenha" 
+              component={AlterarSenhaScreen} 
+              options={{
+                title: 'Alterar Senha',         
+                headerTitleAlign: 'center',
+                headerStyle: { 
+                  backgroundColor: '#EFF6FF',
+                },
+                headerTintColor: '#2563EB',
+              }}
+            />
             <Stack.Screen name="Materiais" component={MateriaisScreen} />
             <Stack.Screen name="Estoque" component={EstoqueScreen} />
             <Stack.Screen name="EntradaMaterial" component={EntradaMaterialScreen} />
             <Stack.Screen name="SaidaMaterial" component={SaidaMaterialScreen} />
           </Stack.Navigator>
         </NavigationContainer>
+
+        <Toast />
       </View>
     </AuthProvider>
   );
+
 };
 
 export default App;
