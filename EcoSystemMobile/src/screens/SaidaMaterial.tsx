@@ -1,77 +1,139 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { Material, MovimentacaoSaida, SaldoMaterial } from '../types';
-import { materialService } from '../services/material';
-import { estoqueService } from '../services/estoque';
-import MovimentacaoFormRN from '../components/MovimentacaoFormRN'; 
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
+import DropDownPicker from "react-native-dropdown-picker";
+import { useNavigation } from "@react-navigation/native";
+import { Material, MovimentacaoSaida, SaldoMaterial } from "../types";
+import { materialService } from "../services/material";
+import { estoqueService } from "../services/estoque";
 
 const SaidaMaterial: React.FC = () => {
+  const navigation = useNavigation<any>();
   const [materiais, setMateriais] = useState<Material[]>([]);
   const [saldos, setSaldos] = useState<SaldoMaterial[]>([]);
   const [loading, setLoading] = useState(true);
-  const [erro, setErro] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState(false);
 
+  // Campos do formulário
+  const [open, setOpen] = useState(false);
+  const [materialId, setMaterialId] = useState<number | null>(null);
+  const [items, setItems] = useState<{ label: string; value: number }[]>([]);
+  const [quantidade, setQuantidade] = useState("");
+  const [errors, setErrors] = useState({
+    materialId: false,
+    quantidade: false,
+  });
+
+  // 🔹 Carregar materiais e saldos
   useEffect(() => {
     carregarDados();
   }, []);
 
   const carregarDados = async () => {
+    setLoading(true);
     try {
       const [materiaisData, saldosData] = await Promise.all([
         materialService.listar(),
         estoqueService.consultarSaldo(),
       ]);
 
-      const materiaisComSaldo = materiaisData.filter(material =>
-        saldosData.some(s => s.material === material.nome && s.quantidade > 0)
+      const materiaisComSaldo = materiaisData.filter((m) =>
+        saldosData.some((s) => s.material === m.nome && s.quantidade > 0)
       );
 
       setMateriais(materiaisComSaldo);
       setSaldos(saldosData);
+
+      // 🔹 Cria os itens do Picker com o saldo entre parênteses
+      const itensComQtd = materiaisComSaldo.map((m) => {
+        const saldo = saldosData.find((s) => s.material === m.nome)?.quantidade || 0;
+        return {
+          label: `${m.nome} (qtd: ${saldo})`,
+          value: m.id,
+        };
+      });
+
+      setItems(itensComQtd);
+      setErro("");
     } catch {
-      setErro('Falha ao carregar dados');
+      setErro("Falha ao carregar dados");
     } finally {
       setLoading(false);
     }
   };
 
   const getSaldoMaterial = (id: number) => {
-    const material = materiais.find(m => m.id === id);
+    const material = materiais.find((m) => m.id === id);
     if (!material) return null;
-    return saldos.find(s => s.material === material.nome);
+    return saldos.find((s) => s.material === material.nome);
   };
 
-  const handleSubmit = async (movimentacoes: MovimentacaoSaida[]) => {
+  // 🔹 Enviar saída
+  const handleSubmit = async () => {
+    const qtd = Number(quantidade);
+
+    const novosErros = {
+      materialId: !materialId,
+      quantidade: !qtd || qtd <= 0 || !Number.isInteger(qtd),
+    };
+    setErrors(novosErros);
+
+    if (Object.values(novosErros).includes(true)) {
+      Alert.alert("Atenção", "Preencha todos os campos corretamente.");
+      return;
+    }
+
+    const saldoAtual = getSaldoMaterial(materialId!);
+    if (!saldoAtual || saldoAtual.quantidade < qtd) {
+      setErro("Quantidade insuficiente em estoque.");
+      return;
+    }
+
     try {
-      for (const mov of movimentacoes) {
-        const saldoAtual = getSaldoMaterial(mov.materialId);
-        if (!saldoAtual || saldoAtual.quantidade < mov.quantidade) {
-          setErro('Quantidade insuficiente em estoque para uma ou mais saídas');
-          return;
-        }
-      }
+      setSaving(true);
+      const movimentacoes: MovimentacaoSaida[] = [
+        { materialId: materialId!, quantidade: qtd },
+      ];
 
       await estoqueService.registrarSaida(movimentacoes);
       setSucesso(true);
-      setTimeout(() => setSucesso(false), 2000);
-      setErro('');
-      carregarDados(); // atualiza os saldos após registrar saídas
+      setErro("");
+      setQuantidade("");
+      setMaterialId(null);
+      setTimeout(() => setSucesso(false), 2500);
+      carregarDados();
     } catch {
-      setErro('Falha ao registrar saídas');
+      setErro("Falha ao registrar saída");
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleCancel = () => {
-    setErro('');
-    setSucesso(false);
-    // Aqui você pode adicionar qualquer lógica extra de cancelamento se precisar
+    navigation.navigate("Dashboard");
   };
 
+  // 🔹 Loading inicial
   if (loading) {
-    return <Text style={styles.loading}>Carregando...</Text>;
+    return (
+      <View style={styles.loadingBox}>
+        <ActivityIndicator size="large" color="#2563EB" />
+        <Text style={styles.loadingText}>Carregando materiais...</Text>
+      </View>
+    );
   }
 
+  // 🔹 Nenhum material disponível
   if (materiais.length === 0) {
     return (
       <View style={styles.container}>
@@ -89,17 +151,99 @@ const SaidaMaterial: React.FC = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Registrar Saída de Material</Text>
+      <View style={styles.card}>
+        <Text style={styles.title}>Registrar Saída de Material</Text>
 
-      {erro ? <Text style={styles.erro}>{erro}</Text> : null}
-      {sucesso ? <Text style={styles.sucesso}>Saídas registradas com sucesso!</Text> : null}
+        {erro ? (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>{erro}</Text>
+          </View>
+        ) : null}
 
-      <MovimentacaoFormRN
-        materiais={materiais}
-        tipo="saida"
-        onSubmit={handleSubmit}
-        onCancel={handleCancel}
-      />
+        {sucesso ? (
+          <View style={styles.successBox}>
+            <Text style={styles.successText}>Saída registrada com sucesso!</Text>
+          </View>
+        ) : null}
+
+        {/* Picker de materiais */}
+        <Text style={styles.label}>Material</Text>
+        <DropDownPicker
+          open={open}
+          value={materialId}
+          items={items}
+          setOpen={setOpen}
+          setValue={setMaterialId}
+          setItems={setItems}
+          searchable
+          placeholder="Selecione um material..."
+          searchPlaceholder="Pesquisar material..."
+          disabled={saving}
+          style={[
+            styles.dropdown,
+            errors.materialId && { borderColor: "red", backgroundColor: "#ffeaea" },
+          ]}
+          // Ajustado: renderiza a lista inline abaixo do input e com mesma largura
+          listMode="SCROLLVIEW"
+          dropDownDirection="BOTTOM"
+          containerStyle={{ width: "100%" }}
+          dropDownContainerStyle={[styles.dropdownContainer, { width: "100%", marginTop: 4 }]}
+          // removido: modalTitle, modalProps, modalContentContainerStyle
+        />
+        {errors.materialId && (
+          <Text style={styles.errorText}>Selecione o material</Text>
+        )}
+
+        {/* Quantidade */}
+        <Text style={styles.label}>Quantidade</Text>
+        <TextInput
+          placeholder="Ex: 10"
+          keyboardType="numeric"
+          style={[
+            styles.input,
+            errors.quantidade && { borderColor: "red", backgroundColor: "#ffeaea" },
+          ]}
+          value={quantidade}
+          onChangeText={(text) => {
+            if (/^\d*$/.test(text)) setQuantidade(text);
+            if (text.trim()) setErrors((e) => ({ ...e, quantidade: false }));
+          }}
+          editable={!saving}
+        />
+        {errors.quantidade && (
+          <Text style={styles.errorText}>Digite um número inteiro válido</Text>
+        )}
+
+        {/* Botões */}
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[styles.button, styles.saveButton, saving && styles.buttonDisabled]}
+            onPress={handleSubmit}
+            disabled={saving}
+          >
+            {saving ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Salvar</Text>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, styles.cancelButton, saving && styles.buttonDisabled]}
+            onPress={handleCancel}
+            disabled={saving}
+          >
+            <Text style={styles.buttonText1}>Cancelar</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Loader de envio */}
+        {saving && (
+          <View style={styles.savingOverlay} pointerEvents="auto">
+            <ActivityIndicator size="large" color="#2563EB" />
+            <Text style={styles.loadingText}>Salvando...</Text>
+          </View>
+        )}
+      </View>
     </ScrollView>
   );
 };
@@ -109,46 +253,96 @@ export default SaidaMaterial;
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    backgroundColor: '#EFF6FF',
+    backgroundColor: "#EFF6FF",
     flexGrow: 1,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
+  loadingBox: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 40,
   },
-  loading: {
-    textAlign: 'center',
-    marginTop: 20,
-    fontSize: 16,
-  },
+  loadingText: { marginTop: 8, color: "#374151", fontSize: 16 },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: "#fff",
+    borderRadius: 8,
     padding: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    marginBottom: 16,
+    elevation: 2,
+  },
+  title: { fontSize: 22, fontWeight: "bold", marginBottom: 16 },
+  label: { fontWeight: "600", marginBottom: 4, color: "#111" },
+  dropdown: {
+    borderColor: "#ccc",
+    borderRadius: 10,
+    marginBottom: 10,
+    backgroundColor: "#fff",
+    minHeight: 44,
+    zIndex: 1, // 🔹 mantém o picker abaixo do overlay
+  },
+  dropdownContainer: {
+    borderColor: "#ccc",
+    borderRadius: 10,
+    zIndex: 2,
+    // mantemos estilos base; largura agora aplicada inline para garantir alinhamento
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 10,
+    backgroundColor: "#fff",
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
+  button: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginHorizontal: 4,
+  },
+  saveButton: { backgroundColor: "#3B82F6" },
+  cancelButton: {borderColor: "#3B82F6", borderWidth: 1 },
+  buttonText: { color: "#fff", fontWeight: "bold" },
+  buttonText1: { color: "#3B82F6", fontWeight: "bold" },
+  buttonDisabled: { opacity: 0.6 },
+  errorBox: {
+    backgroundColor: "#FEE2E2",
+    borderLeftWidth: 4,
+    borderLeftColor: "#EF4444",
+    padding: 12,
+    marginBottom: 12,
+  },
+  errorText: { color: "#B91C1C" },
+  successBox: {
+    backgroundColor: "#D1FAE5",
+    borderLeftWidth: 4,
+    borderLeftColor: "#10B981",
+    padding: 12,
+    marginBottom: 12,
+  },
+  successText: { color: "#047857" },
+  savingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(255,255,255,0.6)",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 9999, // 🔹 garante que o overlay fique acima de tudo
+    elevation: 9999,
   },
   warningBox: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: "#FEF3C7",
     padding: 12,
     borderRadius: 8,
     marginTop: 12,
   },
-  warningText: {
-    color: '#B45309',
-    fontSize: 14,
-  },
-  erro: {
-    color: '#B91C1C',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  sucesso: {
-    color: '#047857',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
+  warningText: { color: "#B45309", fontSize: 14 },
 });

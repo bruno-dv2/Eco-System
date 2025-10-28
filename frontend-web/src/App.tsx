@@ -10,6 +10,7 @@ import Materiais from './pages/Materiais';
 import Estoque from './pages/Estoque';
 import EntradaMaterial from './pages/EntradaMaterial';
 import SaidaMaterial from './pages/SaidaMaterial';
+import AlterarSenha from './pages/AlterarSenha';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { usuario, loading } = useAuth();
@@ -96,6 +97,16 @@ const App: React.FC = () => {
               <PrivateRoute>
                 <Layout>
                   <SaidaMaterial />
+                </Layout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/alterar-senha"
+            element={
+              <PrivateRoute>
+                <Layout>
+                  <AlterarSenha />
                 </Layout>
               </PrivateRoute>
             }
