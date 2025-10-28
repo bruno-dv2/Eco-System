@@ -1,7 +1,16 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, StyleSheet } from 'react-native';
-import { Material } from '../types';
-import { normalizeInput, isValidNumber } from '../utils/currency';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  StyleSheet,
+} from "react-native";
+import { Material } from "../types";
+import { normalizeInput } from "../utils/currency";
+import Input from "../components/common/Input";
+import { theme } from "../constants/theme";
 
 interface Movimentacao {
   materialId: number;
@@ -11,8 +20,10 @@ interface Movimentacao {
 
 interface MovimentacaoFormRNProps {
   materiais: Material[];
-  tipo: 'entrada' | 'saida';
-  onSubmit: (movimentacoes: { materialId: number; quantidade: number; preco?: number }[]) => Promise<void>;
+  tipo: "entrada" | "saida";
+  onSubmit: (
+    movimentacoes: { materialId: number; quantidade: number; preco?: number }[]
+  ) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -20,17 +31,25 @@ const MovimentacaoFormRN: React.FC<MovimentacaoFormRNProps> = ({
   materiais,
   tipo,
   onSubmit,
-  onCancel
+  onCancel,
 }) => {
   const [movimentacoes, setMovimentacoes] = useState<Movimentacao[]>([
-    { materialId: 0, quantidade: '', preco: tipo === 'entrada' ? '' : undefined }
+    {
+      materialId: 0,
+      quantidade: "",
+      preco: tipo === "entrada" ? "" : undefined,
+    },
   ]);
-  const [erro, setErro] = useState('');
+  const [erro, setErro] = useState("");
 
   const handleAddMovimentacao = () => {
     setMovimentacoes([
       ...movimentacoes,
-      { materialId: 0, quantidade: '', preco: tipo === 'entrada' ? '' : undefined }
+      {
+        materialId: 0,
+        quantidade: "",
+        preco: tipo === "entrada" ? "" : undefined,
+      },
     ]);
   };
 
@@ -40,57 +59,67 @@ const MovimentacaoFormRN: React.FC<MovimentacaoFormRNProps> = ({
     }
   };
 
-  const handleMovimentacaoChange = (index: number, field: keyof Movimentacao, value: string) => {
-    const novasMovimentacoes = [...movimentacoes];
-    novasMovimentacoes[index] = {
-      ...novasMovimentacoes[index],
-      [field]: field === 'materialId' ? Number(value) : value
+  const handleMovimentacaoChange = (
+    index: number,
+    field: keyof Movimentacao,
+    value: string
+  ) => {
+    const novas = [...movimentacoes];
+    novas[index] = {
+      ...novas[index],
+      [field]: field === "materialId" ? Number(value) : value,
     };
-    setMovimentacoes(novasMovimentacoes);
+    setMovimentacoes(novas);
   };
 
   const handleSubmit = async () => {
-    setErro('');
+    setErro("");
 
-    if (movimentacoes.some(m => m.materialId === 0)) {
-      setErro('Selecione um material para todas as movimentações');
+    if (movimentacoes.some((m) => m.materialId === 0)) {
+      setErro("Selecione um material para todas as movimentações");
       return;
     }
 
-    const movimentacoesNormalizadas = movimentacoes.map(m => ({
+    const normalizadas = movimentacoes.map((m) => ({
       ...m,
       quantidade: normalizeInput(m.quantidade),
-      preco: m.preco ? normalizeInput(m.preco) : undefined
+      preco: m.preco ? normalizeInput(m.preco) : undefined,
     }));
 
-    if (movimentacoesNormalizadas.some(m => !m.quantidade || Number(m.quantidade) <= 0)) {
-      setErro('Todas as quantidades devem ser maiores que zero');
+    if (normalizadas.some((m) => !m.quantidade || Number(m.quantidade) <= 0)) {
+      setErro("Todas as quantidades devem ser maiores que zero");
       return;
     }
 
-    if (tipo === 'entrada' && movimentacoesNormalizadas.some(m => !m.preco || Number(m.preco) <= 0)) {
-      setErro('Todos os preços devem ser maiores que zero');
+    if (
+      tipo === "entrada" &&
+      normalizadas.some((m) => !m.preco || Number(m.preco) <= 0)
+    ) {
+      setErro("Todos os preços devem ser maiores que zero");
       return;
     }
 
     try {
-      const movimentacoesNumeros = movimentacoesNormalizadas.map(m => ({
+      const movimentacoesNum = normalizadas.map((m) => ({
         materialId: m.materialId,
         quantidade: Number(m.quantidade),
-        ...(tipo === 'entrada' ? { preco: Number(m.preco) } : {})
+        ...(tipo === "entrada" ? { preco: Number(m.preco) } : {}),
       }));
-
-      await onSubmit(movimentacoesNumeros);
+      await onSubmit(movimentacoesNum);
     } catch (error) {
-      setErro(`Erro ao registrar movimentação: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      setErro(
+        `Erro ao registrar movimentação: ${
+          error instanceof Error ? error.message : "Erro desconhecido"
+        }`
+      );
     }
   };
 
   return (
     <ScrollView style={styles.container}>
       {erro ? (
-        <View style={styles.erroContainer}>
-          <Text style={styles.erroText}>{erro}</Text>
+        <View style={styles.errorBox}>
+          <Text style={styles.errorText}>{erro}</Text>
         </View>
       ) : null}
 
@@ -105,84 +134,178 @@ const MovimentacaoFormRN: React.FC<MovimentacaoFormRNProps> = ({
             )}
           </View>
 
+          {/* Campo Material */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Material</Text>
             <View style={styles.pickerContainer}>
-              {materiais.map(material => (
+              {materiais.map((material) => (
                 <TouchableOpacity
                   key={material.id}
                   style={[
                     styles.pickerItem,
-                    movimentacao.materialId === material.id && styles.pickerItemSelected
+                    movimentacao.materialId === material.id &&
+                      styles.pickerItemSelected,
                   ]}
-                  onPress={() => handleMovimentacaoChange(index, 'materialId', String(material.id))}
+                  onPress={() =>
+                    handleMovimentacaoChange(
+                      index,
+                      "materialId",
+                      String(material.id)
+                    )
+                  }
                 >
-                  <Text>{material.nome} ({material.unidade})</Text>
+                  <Text style={styles.pickerText}>
+                    {material.nome} ({material.unidade})
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Quantidade</Text>
-            <TextInput
-              style={styles.input}
-              value={movimentacao.quantidade}
-              keyboardType="decimal-pad"
-              onChangeText={(text) => handleMovimentacaoChange(index, 'quantidade', text)}
-            />
-          </View>
+          {/* Campo Quantidade */}
+          <Input
+            label="Quantidade"
+            placeholder="Digite a quantidade"
+            keyboardType="decimal-pad"
+            value={movimentacao.quantidade}
+            onChangeText={(text) =>
+              handleMovimentacaoChange(index, "quantidade", text)
+            }
+          />
 
-          {tipo === 'entrada' && (
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Preço Unitário (R$)</Text>
-              <TextInput
-                style={styles.input}
-                value={movimentacao.preco}
-                keyboardType="decimal-pad"
-                onChangeText={(text) => handleMovimentacaoChange(index, 'preco', text)}
-              />
-            </View>
+          {/* Campo Preço (somente em entrada) */}
+          {tipo === "entrada" && (
+            <Input
+              label="Preço Unitário (R$)"
+              placeholder="Digite o preço unitário"
+              keyboardType="decimal-pad"
+              value={movimentacao.preco}
+              onChangeText={(text) =>
+                handleMovimentacaoChange(index, "preco", text)
+              }
+            />
           )}
         </View>
       ))}
 
-      <TouchableOpacity style={styles.addButton} onPress={handleAddMovimentacao}>
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={handleAddMovimentacao}
+      >
         <Text style={styles.addButtonText}>+ Adicionar movimentação</Text>
       </TouchableOpacity>
 
       <View style={styles.buttonsContainer}>
         <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
-          <Text style={styles.buttonText}>Cancelar</Text>
+          <Text style={styles.cancelText}>Cancelar</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.buttonText}>{tipo === 'entrada' ? 'Registrar Entradas' : 'Registrar Saídas'}</Text>
+          <Text style={styles.submitText}>
+            {tipo === "entrada" ? "Registrar Entradas" : "Registrar Saídas"}
+          </Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: { padding: 16 },
-  card: { backgroundColor: '#f9fafb', padding: 16, borderRadius: 8, marginBottom: 12 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  cardTitle: { fontWeight: 'bold', fontSize: 16 },
-  removeText: { color: 'red', fontWeight: 'bold' },
-  inputGroup: { marginBottom: 12 },
-  label: { marginBottom: 4, fontWeight: '600' },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 4, padding: 8 },
-  pickerContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  pickerItem: { padding: 8, borderWidth: 1, borderColor: '#ccc', borderRadius: 4, marginBottom: 4 },
-  pickerItemSelected: { backgroundColor: '#d1fae5', borderColor: '#10b981' },
-  addButton: { marginVertical: 12, alignItems: 'center' },
-  addButtonText: { color: '#2563eb', fontWeight: '600' },
-  buttonsContainer: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 16 },
-  cancelButton: { backgroundColor: '#f3f4f6', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 4, marginRight: 8 },
-  submitButton: { backgroundColor: '#2563eb', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 4 },
-  buttonText: { color: 'white', fontWeight: '600' },
-  erroContainer: { backgroundColor: '#fee2e2', padding: 12, borderRadius: 4, marginBottom: 12 },
-  erroText: { color: '#b91c1c' }
-});
-
 export default MovimentacaoFormRN;
+
+const styles = StyleSheet.create({
+  container: {
+    padding: theme.spacing.md,
+  },
+  card: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+    elevation: 2,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: theme.spacing.sm,
+  },
+  cardTitle: {
+    fontWeight: "700",
+    fontSize: theme.fontSizes.md,
+    color: theme.colors.textPrimary,
+  },
+  removeText: {
+    color: theme.colors.error,
+    fontWeight: "600",
+  },
+  inputGroup: {
+    marginBottom: theme.spacing.md,
+  },
+  label: {
+    fontWeight: "600",
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.xs,
+  },
+  pickerContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: theme.spacing.xs,
+  },
+  pickerItem: {
+    padding: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.sm,
+    marginBottom: theme.spacing.xs,
+  },
+  pickerItemSelected: {
+    backgroundColor: theme.colors.successLight,
+    borderColor: theme.colors.success,
+  },
+  pickerText: {
+    color: theme.colors.textPrimary,
+  },
+  addButton: {
+    marginVertical: theme.spacing.md,
+    alignItems: "center",
+  },
+  addButtonText: {
+    color: theme.colors.primary,
+    fontWeight: "600",
+  },
+  buttonsContainer: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: theme.spacing.md,
+  },
+  cancelButton: {
+    backgroundColor: theme.colors.surfaceVariant,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    borderRadius: theme.radius.sm,
+    marginRight: theme.spacing.sm,
+  },
+  cancelText: {
+    color: theme.colors.textSecondary,
+    fontWeight: "600",
+  },
+  submitButton: {
+    backgroundColor: theme.colors.primary,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    borderRadius: theme.radius.sm,
+  },
+  submitText: {
+    color: "#FFF",
+    fontWeight: "600",
+  },
+  errorBox: {
+    backgroundColor: theme.colors.errorBackground,
+    padding: theme.spacing.sm,
+    borderRadius: theme.radius.sm,
+    marginBottom: theme.spacing.md,
+  },
+  errorText: {
+    color: theme.colors.error,
+    fontSize: theme.fontSizes.sm,
+  },
+});
