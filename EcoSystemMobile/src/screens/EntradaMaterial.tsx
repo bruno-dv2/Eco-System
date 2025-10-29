@@ -1,10 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { Material } from '../types';
-import { materialService } from '../services/material';
-import { estoqueService } from '../services/estoque';
-import MovimentacaoFormRN from '../components/MovimentacaoFormRN';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  ActivityIndicator,
+  StyleSheet,
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { Material } from "../types";
+import { materialService } from "../services/material";
+import { estoqueService } from "../services/estoque";
+import MovimentacaoFormRN from "../components/MovimentacaoFormRN";
 
 interface Movimentacao {
   materialId: number;
@@ -15,7 +21,7 @@ interface Movimentacao {
 const EntradaMaterial: React.FC = () => {
   const [materiais, setMateriais] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
-  const [erro, setErro] = useState('');
+  const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState(false);
   const navigation = useNavigation<any>();
 
@@ -28,7 +34,7 @@ const EntradaMaterial: React.FC = () => {
       const data = await materialService.listar();
       setMateriais(data);
     } catch {
-      setErro('Falha ao carregar materiais');
+      setErro("Falha ao carregar materiais");
     } finally {
       setLoading(false);
     }
@@ -37,18 +43,18 @@ const EntradaMaterial: React.FC = () => {
   const handleSubmit = async (movimentacoes: Movimentacao[]) => {
     try {
       await estoqueService.registrarEntrada(
-        movimentacoes.map(m => ({
+        movimentacoes.map((m) => ({
           materialId: m.materialId,
           quantidade: m.quantidade,
-          preco: m.preco || 0
+          preco: m.preco || 0,
         }))
       );
       setSucesso(true);
       setTimeout(() => {
-        navigation.navigate('Estoque');
+        navigation.navigate("Estoque");
       }, 2000);
     } catch {
-      setErro('Falha ao registrar entradas');
+      setErro("Falha ao registrar entradas");
     }
   };
 
@@ -77,7 +83,9 @@ const EntradaMaterial: React.FC = () => {
 
           {sucesso ? (
             <View style={styles.successBox}>
-              <Text style={styles.successText}>Entradas registradas com sucesso!</Text>
+              <Text style={styles.successText}>
+                Entradas registradas com sucesso!
+              </Text>
             </View>
           ) : null}
 
@@ -85,7 +93,7 @@ const EntradaMaterial: React.FC = () => {
             materiais={materiais}
             tipo="entrada"
             onSubmit={handleSubmit}
-            onCancel={() => navigation.navigate('Estoque')}
+            onCancel={() => navigation.navigate("Estoque")}
           />
         </View>
       </View>
@@ -102,55 +110,55 @@ const styles = StyleSheet.create({
   },
   centered: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 16,
   },
   loadingText: {
     marginTop: 8,
     fontSize: 16,
-    color: '#374151',
+    color: "#374151",
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 8,
-    overflow: 'hidden',
-    shadowColor: '#000',
+    overflow: "hidden",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
   header: {
-    backgroundColor: '#ffffffff',
+    backgroundColor: "#ffffffff",
     padding: 16,
   },
   title: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000000ff',
+    fontWeight: "bold",
+    color: "#000000ff",
   },
   body: {
     padding: 16,
   },
   errorBox: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: "#FEE2E2",
     borderLeftWidth: 4,
-    borderLeftColor: '#EF4444',
+    borderLeftColor: "#EF4444",
     padding: 12,
     marginBottom: 12,
   },
   errorText: {
-    color: '#B91C1C',
+    color: "#B91C1C",
   },
   successBox: {
-    backgroundColor: '#D1FAE5',
+    backgroundColor: "#D1FAE5",
     borderLeftWidth: 4,
-    borderLeftColor: '#10B981',
+    borderLeftColor: "#10B981",
     padding: 12,
     marginBottom: 12,
   },
   successText: {
-    color: '#047857',
+    color: "#047857",
   },
 });
