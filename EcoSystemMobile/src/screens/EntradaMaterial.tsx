@@ -2,6 +2,17 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
+  ScrollView,
+  ActivityIndicator,
+  StyleSheet,
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { Material } from "../types";
+import { materialService } from "../services/material";
+import { estoqueService } from "../services/estoque";
+import MovimentacaoFormRN from "../components/MovimentacaoFormRN";
+
+interface Movimentacao {
   TextInput,
   TouchableOpacity,
   StyleSheet,
@@ -26,6 +37,7 @@ export default function EntradaMaterial() {
 
   //Estados principais
   const [materiais, setMateriais] = useState<Material[]>([]);
+
   const [loading, setLoading] = useState(true); // carregamento inicial
   const [saving, setSaving] = useState(false); // carregamento ao salvar
   const [erro, setErro] = useState("");
@@ -113,15 +125,14 @@ export default function EntradaMaterial() {
       setSucesso(true);
       setErro("");
 
-      setTimeout(() => {
-        setSaving(false);
-        navigation.navigate("Estoque");
-      }, 1500);
-    } catch {
-      setSaving(false);
-      setErro("Falha ao registrar entradas");
-    }
-  };
+     setTimeout(() => {
+  setSaving(false);
+  navigation.navigate("Estoque");
+}, 1500);
+} catch {
+  setErro("Falha ao registrar entradas");
+}
+
 
   //Loader inicial
   if (loading) {
@@ -153,38 +164,65 @@ export default function EntradaMaterial() {
           </View>
         ) : null}
 
-        {/* Seletor de material */}
-        <Text style={styles.label}>Material</Text>
-        <View
-          style={[styles.dropdownWrapper, dropdownWidth ? { width: dropdownWidth } : { width: "100%" }]}
-          onLayout={(e) => setDropdownWidth(e.nativeEvent.layout.width)}
-        >
-          <DropDownPicker
-            open={open}
-            value={materialId}
-            items={items}
-            setOpen={setOpen}
-            setValue={setMaterialId}
-            setItems={setItems}
-            searchable
-            placeholder="Selecione um material..."
-            searchPlaceholder="Pesquisar material..."
-            disabled={saving}
-            style={[
-              styles.dropdown,
-              errors.materialId && { borderColor: "red", backgroundColor: "#ffeaea" },
-            ]}
-            // Abre a lista abaixo do input e usa a largura medida
-            listMode="SCROLLVIEW"
-            dropDownDirection="BOTTOM"
-            containerStyle={{ width: "100%", position: "relative" }}
-            // Tornar o container absoluto para sobrepor outros inputs
-            dropDownContainerStyle={[
-              styles.dropdownContainer,
-              dropdownWidth
-                ? { position: "absolute", top: 50, left: 0, width: dropdownWidth, zIndex: 3000, elevation: 3000 }
-                : { position: "absolute", top: 50, left: 0, width: "100%", zIndex: 3000, elevation: 3000 },
-            ]}
+<View style={styles.body}>
+  {/* Mensagens de erro */}
+  {erro ? (
+    <View style={styles.errorBox}>
+      <Text style={styles.errorText}>{erro}</Text>
+    </View>
+  ) : null}
+
+  {/* Mensagem de sucesso */}
+  {sucesso ? (
+    <View style={styles.successBox}>
+      <Text style={styles.successText}>
+        Entradas registradas com sucesso!
+      </Text>
+    </View>
+  ) : null}
+
+  {/* Seletor de material */}
+  <Text style={styles.label}>Material</Text>
+  <View
+    style={[styles.dropdownWrapper, dropdownWidth ? { width: dropdownWidth } : { width: "100%" }]}
+    onLayout={(e) => setDropdownWidth(e.nativeEvent.layout.width)}
+  >
+    <DropDownPicker
+      open={open}
+      value={materialId}
+      items={items}
+      setOpen={setOpen}
+      setValue={setMaterialId}
+      setItems={setItems}
+      searchable
+      placeholder="Selecione um material..."
+      searchPlaceholder="Pesquisar material..."
+      disabled={saving}
+      style={[
+        styles.dropdown,
+        errors.materialId && { borderColor: "red", backgroundColor: "#ffeaea" },
+      ]}
+      listMode="SCROLLVIEW"
+      dropDownDirection="BOTTOM"
+      containerStyle={{ width: "100%", position: "relative" }}
+      dropDownContainerStyle={[
+        styles.dropdownContainer,
+        dropdownWidth
+          ? { position: "absolute", top: 50, left: 0, width: dropdownWidth, zIndex: 3000, elevation: 3000 }
+          : { position: "absolute", top: 50, left: 0, width: "100%", zIndex: 3000, elevation: 3000 },
+      ]}
+    />
+  </View>
+
+  {/* Formulário */}
+  <MovimentacaoFormRN
+    materiais={materiais}
+    tipo="entrada"
+    onSubmit={handleSubmit}
+    onCancel={() => navigation.navigate("Estoque")}
+  />
+</View>
+
           />
         </View>
 
@@ -264,10 +302,11 @@ export default function EntradaMaterial() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: "#EFF6FF",
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
     padding: 16,
-    paddingBottom: 32,
   },
   loadingBox: {
     flexDirection: "column",
@@ -275,16 +314,31 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
   },
-  loadingText: { marginTop: 8, color: "#374151", fontSize: 16 },
+  loadingText: {
+    marginTop: 8,
+    fontSize: 16,
+    color: "#374151",
+  },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFFFF",
     borderRadius: 8,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+    padding: 16,
+  },
+  header: {
+    backgroundColor: "#ffffffff",
     padding: 16,
     elevation: 2,
   },
   title: {
     fontSize: 20,
     fontWeight: "bold",
+    color: "#000000ff",
     marginBottom: 12,
   },
   label: {
@@ -303,12 +357,11 @@ const styles = StyleSheet.create({
   dropdownContainer: {
     borderColor: "#ccc",
     borderRadius: 10,
-    // zIndex/elevation aplicados dinamicamente no dropDownContainerStyle
   },
   dropdownWrapper: {
-    position: "relative", // necessário para que o dropDownContainer absoluto seja posicionado em relação a este wrapper
+    position: "relative",
     zIndex: 2000,
-    elevation: 2000, // Android
+    elevation: 2000,
   },
   input: {
     borderWidth: 1,
@@ -331,7 +384,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   saveButton: { backgroundColor: "#3B82F6" },
-  cancelButton: {borderColor: "#3B82F6", borderWidth: 1 },
+  cancelButton: { borderColor: "#3B82F6", borderWidth: 1 },
   buttonText: { color: "#fff", fontWeight: "bold" },
   buttonText1: { color: "#3B82F6", fontWeight: "bold" },
   buttonDisabled: { opacity: 0.6 },

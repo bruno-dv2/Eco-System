@@ -6,7 +6,9 @@ import {
   Text,
   TextInputProps,
 } from "react-native";
-import { theme } from "../../constants/theme";
+
+import THEME from "../../constants/theme";
+const theme = THEME;
 
 interface InputProps extends TextInputProps {
   label?: string;
