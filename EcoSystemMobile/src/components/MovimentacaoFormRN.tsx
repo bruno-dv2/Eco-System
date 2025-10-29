@@ -1,4 +1,3 @@
-import Input from "./common/Input";
 
 import React, { useState } from "react";
 import {
@@ -12,12 +11,15 @@ import {
 import { Material } from "../types";
 import { normalizeInput } from "../utils/currency";
 
+
 // 🚀 CORREÇÃO 1: Importa o objeto THEME completo
 // Assumindo que o caminho correto para theme.ts é '../theme' ou '../constants/theme'.
 // Se o seu arquivo tema estiver em 'src/theme.ts' e este componente em 'src/components', use '../theme'.
 import THEME from "../constants/theme";
 // 🚨 IMPORTANTE: O componente <Input> deve ser importado aqui se estiver em outro arquivo.
 // Exemplo: import Input from "./Input";
+import Input from "./common/Input";
+
 
 interface Movimentacao {
   materialId: number;
@@ -170,7 +172,7 @@ const MovimentacaoFormRN: React.FC<MovimentacaoFormRNProps> = ({
           </View>
 
           {/* Campo Quantidade */}
-          {/* Este componente deve ser importado. Preservado o código original. */}
+
           <Input
             label="Quantidade"
             placeholder="Digite a quantidade"
@@ -219,13 +221,9 @@ const MovimentacaoFormRN: React.FC<MovimentacaoFormRNProps> = ({
 
 export default MovimentacaoFormRN;
 
+
 // 🚀 CORREÇÃO 2: Define 'theme' (minúsculo) para uso nos estilos
 const theme = THEME;
-
-const styles = StyleSheet.create({
-  // ATENÇÃO: Corrigido o erro de digitação de theme.colors.surfaace -> theme.colors.surface
-  // e alterado o prefixo de acesso para usar o alias que foi adicionado no THEME.
-  // Assumindo que você adicionou { colors: COLORS } no seu THEME no theme.ts.
 
   container: {
     padding: theme.spacing.md,
@@ -310,7 +308,9 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.sm,
   },
   submitText: {
-    color: theme.colors.white, // Alterado de "#FFF" para usar a constante do tema
+
+   color: theme.colors.white, // Alterado de "#FFF" para usar a constante do tema
+
     fontWeight: "600",
   },
   errorBox: {

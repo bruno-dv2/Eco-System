@@ -1,70 +1,109 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Button, ScrollView, TouchableOpacity } from 'react-native';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TextInput, 
+  ScrollView, 
+  TouchableOpacity, 
+  ActivityIndicator 
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { authService } from '../services/auth';
+import Toast from 'react-native-toast-message';
 
 const AlterarSenha: React.FC = () => {
+  const [senhaAtual, setSenhaAtual] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [erro, setErro] = useState('');
-  const [sucesso, setSucesso] = useState(false);
   const [loading, setLoading] = useState(false);
+  const navigation = useNavigation<any>();
 
   const handleAlterarSenha = async () => {
     setErro('');
-    setSucesso(false);
 
-    if (!novaSenha || !confirmarSenha) {
-      setErro('Preencha todos os campos.');
+    if (!senhaAtual || !novaSenha || !confirmarSenha) {
+      setErro('Preencha todos os campos');
       return;
     }
+
+    if (novaSenha.length < 8) {
+      setErro('A nova senha deve ter no mínimo 8 caracteres');
+      return;
+    }
+
     if (novaSenha !== confirmarSenha) {
-      setErro('As senhas não coincidem.');
+      setErro('As senhas não coincidem');
       return;
     }
+
+    if (senhaAtual === novaSenha) {
+      setErro('A nova senha deve ser diferente da senha atual');
+      return;
+    }
+
     setLoading(true);
     try {
-      // Simulação de chamada de API
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setSucesso(true);
+      await authService.alterarSenha(senhaAtual, novaSenha);
+
+      Toast.show({
+        type: 'success',
+        text1: 'Senha alterada com sucesso!',
+        position: 'top',
+        visibilityTime: 2000,
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      navigation.goBack();
+
+      setSenhaAtual('');
       setNovaSenha('');
       setConfirmarSenha('');
-      setTimeout(() => setSucesso(false), 2000);
-    } catch {
-      setErro('Falha ao alterar senha.');
+    } catch (error: any) {
+      if (error.response?.data?.erro) {
+        setErro(error.response.data.erro);
+      } else {
+        setErro('Erro ao alterar senha. Tente novamente.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleCancel = () => {
-    setErro('');
-    setSucesso(false);
-    setNovaSenha('');
-    setConfirmarSenha('');
+    navigation.goBack();
   };
-
-  if (loading) {
-    return <Text style={styles.loading}>Carregando...</Text>;
-  }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Alterar Senha</Text>
-
       {erro ? (
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{erro}</Text>
         </View>
       ) : null}
-      {sucesso ? <Text style={styles.sucesso}>Senha alterada com sucesso!</Text> : null}
 
       <View style={styles.card}>
+        <Text style={styles.label}>Senha Atual</Text>
+        <TextInput
+          style={styles.input}
+          secureTextEntry
+          value={senhaAtual}
+          onChangeText={setSenhaAtual}
+          placeholder="Digite sua senha atual"
+          placeholderTextColor="#9CA3AF"
+          editable={!loading}
+        />
+
         <Text style={styles.label}>Nova Senha</Text>
         <TextInput
           style={styles.input}
           secureTextEntry
           value={novaSenha}
           onChangeText={setNovaSenha}
-          placeholder="Digite a nova senha"
+          placeholder="Digite a nova senha (mínimo 8 caracteres)"
+          placeholderTextColor="#9CA3AF"
+          editable={!loading}
         />
 
         <Text style={styles.label}>Confirmar Nova Senha</Text>
@@ -74,22 +113,31 @@ const AlterarSenha: React.FC = () => {
           value={confirmarSenha}
           onChangeText={setConfirmarSenha}
           placeholder="Confirme a nova senha"
+          placeholderTextColor="#9CA3AF"
+          editable={!loading}
         />
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity
-            style={[styles.actionButton, { marginRight: 4 }]}
+            style={[styles.actionButton, loading && styles.buttonDisabled]}
             onPress={handleAlterarSenha}
             activeOpacity={0.8}
+            disabled={loading}
           >
-            <Text style={styles.actionText}>Alterar Senha</Text>
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.actionText}>Alterar Senha</Text>
+            )}
           </TouchableOpacity>
+          
           <TouchableOpacity
-            style={[styles.actionButton, styles.cancelButton, { marginLeft: 4 }]}
+            style={[styles.cancelButton, loading && styles.buttonDisabled]}
             onPress={handleCancel}
             activeOpacity={0.8}
+            disabled={loading}
           >
-            <Text style={[styles.actionText, styles.cancelText]}>Cancelar</Text>
+            <Text style={styles.cancelText}>Cancelar</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -101,88 +149,86 @@ export default AlterarSenha;
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
-    backgroundColor: '#EFF6FF',
     flexGrow: 1,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'left',
-  },
-  loading: {
-    textAlign: 'center',
-    marginTop: 20,
-    fontSize: 16,
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 16,
+    paddingTop: 40,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
   },
   card: {
+    width: '100%',
+    maxWidth: 400,
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 24,
     shadowColor: '#000',
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 10,
-    marginBottom: 16,
+    elevation: 5,
   },
   label: {
-    fontSize: 16,
-    marginBottom: 4,
-    marginTop: 12,
+    fontSize: 15,
+    marginBottom: 6,
+    marginTop: 16,
     fontWeight: '500',
+    color: '#374151',
   },
   input: {
     borderWidth: 1,
     borderColor: '#CBD5E1',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 4,
+    borderRadius: 10,
+    padding: 14,
     backgroundColor: '#F9FAFB',
+    fontSize: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 20,
-    borderRadius: 8,
+    marginTop: 30,
+    gap: 10,
   },
   actionButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: '#2563EB',
-    borderRadius: 999, // Borda bem curva
+    backgroundColor: '#2563EB',
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
-    backgroundColor: '#fff',
   },
   actionText: {
-    color: '#2563EB',
-    fontWeight: '500',
+    color: '#fff',
+    fontWeight: '600',
     fontSize: 16,
   },
   cancelButton: {
-    borderColor: '#6B7280',
-    backgroundColor: '#fff',
+    flex: 1,
+    backgroundColor: '#E5E7EB',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
   },
   cancelText: {
-    color: '#6B7280',
+    color: '#374151',
+    fontWeight: '600',
+    fontSize: 16,
   },
-  erro: {
-    color: '#B91C1C',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  sucesso: {
-    color: '#047857',
-    marginBottom: 8,
-    textAlign: 'center',
+  buttonDisabled: {
+    opacity: 0.6,
   },
   errorBox: {
+    width: '100%',
+    maxWidth: 400,
     backgroundColor: '#FEE2E2',
     borderColor: '#FCA5A5',
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 8,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    alignItems: 'center',
   },
   errorText: {
     color: '#B91C1C',

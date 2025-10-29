@@ -6,6 +6,7 @@ import {
   Text,
   TextInputProps,
 } from "react-native";
+
 import THEME from "../../constants/theme";
 const theme = THEME;
 
