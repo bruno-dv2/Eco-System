@@ -122,10 +122,13 @@ export default function Dashboard() {
       );
     }
 
+    const saldosValidos = Array.isArray(saldos) ? saldos : [];
+
     const valorTotalEstoque = formatCurrency(
-      saldos.reduce((total, saldo) => total + saldo.quantidade * saldo.precoMedio, 0)
+      saldosValidos.reduce((total, saldo) => total + (saldo.quantidade || 0) * (saldo.precoMedio || 0), 0)
     );
-    const itensBaixa = saldos.filter(saldo => saldo.quantidade < 10).length;
+
+    const itensBaixa = saldosValidos.filter(saldo => (saldo.quantidade || 0) < 10).length;
 
     return (
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
@@ -145,10 +148,10 @@ export default function Dashboard() {
             {manualLoading ? (
               <ActivityIndicator color="#3B82F6" size="small" />
             ) : (
-              <>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Feather name="refresh-ccw" size={18} color="#3B82F6" />
                 <Text style={styles.refreshText}>Atualizar agora</Text>
-              </>
+              </View>
             )}
           </TouchableOpacity>
         </View>
@@ -204,11 +207,19 @@ export default function Dashboard() {
     );
   };
 
-  const renderContent = () => {
-    if (activeTab === 'Materiais') return <Materiais />;
-    if (activeTab === 'Estoque') return <Estoque />;
-    return <PainelContent />;
-  };
+  const renderContent = () => (
+    <>
+      <View style={{ display: activeTab === 'Painel' ? 'flex' : 'none', flex: 1 }}>
+        <PainelContent />
+      </View>
+      <View style={{ display: activeTab === 'Materiais' ? 'flex' : 'none', flex: 1 }}>
+        <Materiais />
+      </View>
+      <View style={{ display: activeTab === 'Estoque' ? 'flex' : 'none', flex: 1 }}>
+        <Estoque />
+      </View>
+    </>
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -317,7 +328,7 @@ const styles = StyleSheet.create({
   logoutText: { fontSize: 16, color: '#EF4444', marginLeft: 12, fontWeight: '600' },
   errorBox: { backgroundColor: '#FEE2E2', marginHorizontal: 16, borderRadius: 12, padding: 12, marginBottom: 16 },
   errorText: { color: '#B91C1C', fontWeight: '500' },
-  refreshContainer: { alignItems: 'flex-end', marginHorizontal: 16, marginBottom: 8 , marginTop: 10},
+  refreshContainer: { alignItems: 'flex-end', marginHorizontal: 16, marginBottom: 8, marginTop: 10 },
   refreshButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#3B82F6', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 999 },
   refreshButtonDisabled: { opacity: 0.6 },
   refreshText: { color: '#3B82F6', fontWeight: '500', marginLeft: 6, fontSize: 14 },
