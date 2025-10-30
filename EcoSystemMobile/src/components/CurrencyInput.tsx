@@ -1,5 +1,7 @@
-import * as React from 'react';
-import { normalizeInput, isValidNumber } from '../utils/currency';
+import * as React from "react";
+import { normalizeInput, isValidNumber } from "../utils/currency";
+import { COLORS, SIZES } from "../constants/theme";
+// 👈 importa o tema
 
 interface CurrencyInputProps {
   id?: string;
@@ -16,14 +18,14 @@ const CurrencyInput: React.FC<CurrencyInputProps> = ({
   onChange,
   placeholder = "",
   className = "input-field",
-  required = false
+  required = false,
 }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
-    
+
     const allowedPattern = /^[0-9,.]*$/;
-    
-    if (allowedPattern.test(inputValue) || inputValue === '') {
+
+    if (allowedPattern.test(inputValue) || inputValue === "") {
       onChange(inputValue);
     }
   };
