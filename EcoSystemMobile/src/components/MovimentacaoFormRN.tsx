@@ -324,3 +324,5 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSizes.sm,
   },
 });
+
+//resolvido

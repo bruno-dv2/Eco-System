@@ -162,3 +162,5 @@ const styles = StyleSheet.create({
     color: "#047857",
   },
 });
+
+//resolvido
