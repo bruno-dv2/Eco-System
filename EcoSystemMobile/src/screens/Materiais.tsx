@@ -226,9 +226,11 @@ export default function Materiais() {
     ]);
   };
 
-  const materiaisFiltrados = materiais.filter((m) =>
-    m.nome.toLowerCase().includes(search.toLowerCase())
+  const materiaisValidos = Array.isArray(materiais) ? materiais : [];
+  const materiaisFiltrados = materiaisValidos.filter((m) =>
+    (m.nome || '').toLowerCase().includes(search.toLowerCase())
   );
+
 
   if (loading)
     return <ActivityIndicator size="large" color="#2563EB" style={{ flex: 1, marginTop: 40 }} />;

@@ -111,6 +111,8 @@ export default function Dashboard() {
       );
     }
 
+    const saldosValidos = Array.isArray(saldos) ? saldos : [];
+
     const valorTotalEstoque = formatCurrency(
       saldos.reduce(
         (total, saldo) => total + saldo.quantidade * saldo.precoMedio,
@@ -178,11 +180,19 @@ export default function Dashboard() {
     );
   };
 
-  const renderContent = () => {
-    if (activeTab === "Materiais") return <Materiais />;
-    if (activeTab === "Estoque") return <Estoque />;
-    return <PainelContent />;
-  };
+  const renderContent = () => (
+    <>
+      <View style={{ display: activeTab === 'Painel' ? 'flex' : 'none', flex: 1 }}>
+        <PainelContent />
+      </View>
+      <View style={{ display: activeTab === 'Materiais' ? 'flex' : 'none', flex: 1 }}>
+        <Materiais />
+      </View>
+      <View style={{ display: activeTab === 'Estoque' ? 'flex' : 'none', flex: 1 }}>
+        <Estoque />
+      </View>
+    </>
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
