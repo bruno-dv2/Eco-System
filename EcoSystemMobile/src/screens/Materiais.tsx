@@ -161,6 +161,7 @@ export default function Materiais() {
   const [editarMaterial, setEditarMaterial] = useState<Material | null>(null);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState<Material | null>(null);
 
   const carregarDados = async () => {
     setLoading(true);
@@ -221,29 +222,25 @@ export default function Materiais() {
     setModalVisible(true);
   };
 
-  const excluirMaterial = async (material: Material) => {
+  const excluirMaterial = (material: Material) => {
     const saldo = saldos.find((s) => s.material === material.nome)?.quantidade || 0;
-    if (saldo > 0)
-      return setErro("Não é possível excluir material com saldo em estoque.");
+    if (saldo > 0) return setErro("Não é possível excluir material com saldo em estoque.");
+    setConfirmDelete(material);
+  };
 
-    Alert.alert("Confirmação", `Excluir "${material.nome}"?`, [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Excluir",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await materialService.excluir(material.id);
-            setSucesso("Material excluído com sucesso!");
-            await carregarDados();
-            setTimeout(() => setSucesso(""), 3000);
-          } catch (error: any) {
-            console.error("Erro ao excluir:", error);
-            setErro(error.response?.data?.mensagem || "Falha ao excluir material");
-          }
-        },
-      },
-    ]);
+  const handleConfirmDelete = async () => {
+    if (!confirmDelete) return;
+    try {
+      await materialService.excluir(confirmDelete.id);
+      setSucesso("Material excluído com sucesso!");
+      await carregarDados();
+      setTimeout(() => setSucesso(""), 3000);
+    } catch (error: any) {
+      console.error("Erro ao excluir:", error);
+      setErro(error.response?.data?.mensagem || "Falha ao excluir material");
+    } finally {
+      setConfirmDelete(null);
+    }
   };
 
   const materiaisFiltrados = materiais.filter((m) =>
@@ -325,6 +322,39 @@ export default function Materiais() {
         unidadeInicial={editarMaterial?.unidade}
         onSubmit={adicionarOuEditarMaterial}
       />
+
+      {/* Modal de confirmação de exclusão */}
+      <Modal
+        visible={!!confirmDelete}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setConfirmDelete(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.confirmContainer}>
+            <Text style={styles.confirmTitle}>Confirmação</Text>
+            <Text style={styles.confirmText}>
+              {`Excluir "${confirmDelete?.nome}"?`}
+            </Text>
+            <View style={styles.confirmButtons}>
+              <TouchableOpacity
+                style={[styles.confirmButton]}
+                onPress={() => setConfirmDelete(null)}
+              >
+                <Text style={styles.confirmButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.confirmButton, styles.confirmButtonDestructive]}
+                onPress={handleConfirmDelete}
+              >
+                <Text style={[styles.confirmButtonText, { color: "#fff" }]}>
+                  Excluir
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -437,4 +467,22 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   submitButtonText: { color: "#fff", fontWeight: "600" },
+  confirmContainer: {
+    width: "85%",
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    padding: 16,
+    elevation: 6,
+  },
+  confirmTitle: { fontSize: 16, fontWeight: "700", marginBottom: 8 },
+  confirmText: { fontSize: 14, marginBottom: 12 },
+  confirmButtons: { flexDirection: "row", justifyContent: "flex-end" },
+  confirmButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    marginLeft: 8,
+  },
+  confirmButtonText: { color: "#2563EB", fontWeight: "600" },
+  confirmButtonDestructive: { backgroundColor: "#ef4444" },
 });
