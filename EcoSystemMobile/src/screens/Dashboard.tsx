@@ -17,74 +17,40 @@ import { estoqueService } from "../services/estoque";
 import { materialService } from "../services/material";
 import { SaldoMaterial, Material } from "../types";
 import { formatCurrency } from "../utils/currency";
-
+import { COLORS, SIZES } from "../constants/theme";
 import Materiais from "./Materiais";
 import Estoque from "./Estoque";
-
-// 🎨 Importa o tema global
-import { COLORS, SIZES } from "../constants/theme";
-
-interface DashboardCardProps {
-  title: string;
-  value: string | number;
-  iconName: string;
-  iconBg: string;
-  iconColor: string;
-  onPressLink?: () => void;
-  linkText?: string;
-}
-
-const DashboardCard: React.FC<DashboardCardProps> = ({
-  title,
-  value,
-  iconName,
-  iconBg,
-  iconColor,
-  onPressLink,
-  linkText,
-}) => (
-  <View style={styles.card}>
-    <View style={styles.rowBetween}>
-      <Text style={styles.cardTitle}>{title}</Text>
-      <View style={[styles.iconContainer, { backgroundColor: iconBg }]}>
-        <Feather name={iconName as any} size={24} color={iconColor} />
-      </View>
-    </View>
-    <Text style={styles.cardValue}>{value}</Text>
-    {onPressLink && linkText && (
-      <TouchableOpacity onPress={onPressLink}>
-        <Text style={styles.cardLink}>{linkText}</Text>
-      </TouchableOpacity>
-    )}
-  </View>
-);
+import { DashboardCard } from "../components/common/card/DashboardCard";
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<
-    "Painel" | "Materiais" | "Estoque"
-  >("Painel");
+  const [activeTab, setActiveTab] = useState<"Painel" | "Materiais" | "Estoque">("Painel");
+  const [visitedTabs, setVisitedTabs] = useState(["Painel"]);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [saldos, setSaldos] = useState<SaldoMaterial[]>([]);
   const [materiais, setMateriais] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reloading, setReloading] = useState(false);
   const [erro, setErro] = useState("");
 
   const { logout, usuario } = useAuth();
   const navigation = useNavigation<any>();
 
   const carregarDados = async () => {
+    setReloading(true);
     try {
       const [saldosData, materiaisData] = await Promise.all([
         estoqueService.consultarSaldo(),
         materialService.listar(),
       ]);
-      setSaldos(saldosData);
-      setMateriais(materiaisData);
+      setSaldos(Array.isArray(saldosData) ? saldosData : []);
+      setMateriais(Array.isArray(materiaisData) ? materiaisData : []);
       setErro("");
-    } catch {
-      setErro("Falha ao carregar dados");
+    } catch (error: any) {
+      console.error("Erro ao carregar dados:", error);
+      setErro(error.message || "Falha ao carregar dados");
     } finally {
       setLoading(false);
+      setReloading(false);
     }
   };
 
@@ -92,45 +58,59 @@ export default function Dashboard() {
     carregarDados();
   }, []);
 
+  const handleTabChange = (tab: "Painel" | "Materiais" | "Estoque") => {
+    setActiveTab(tab);
+    if (!visitedTabs.includes(tab)) setVisitedTabs([...visitedTabs, tab]);
+  };
+
   const handleLogout = async () => {
     setShowUserMenu(false);
     await logout();
-    navigation.reset({
-      index: 0,
-      routes: [{ name: "Welcome" }],
-    });
+    navigation.reset({ index: 0, routes: [{ name: "Welcome" }] });
   };
 
   const PainelContent = () => {
-    if (loading) {
+    if (loading)
       return (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={COLORS.primary} />
           <Text style={styles.loadingText}>Carregando...</Text>
         </View>
       );
-    }
 
-  const saldosValidos = Array.isArray(saldos) ? saldos : [];
+    const valorTotalEstoque = formatCurrency(
+      saldos.reduce(
+        (total, s) => total + (s.quantidade || 0) * (s.precoMedio || 0),
+        0
+      )
+    );
 
-  const valorTotalEstoque = formatCurrency(
-    saldosValidos.reduce(
-      (total, saldo) => total + (saldo.quantidade || 0) * (saldo.precoMedio || 0),
-      0
-    )
-  );
-
-  const itensBaixa = saldosValidos.filter(
-    (saldo) => (saldo.quantidade || 0) < 10
-  ).length;
+    const itensBaixa = saldos.filter((s) => (s.quantidade || 0) < 10).length;
 
     return (
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
-        {erro && (
+        {erro ? (
           <View style={styles.errorBox}>
             <Text style={styles.errorText}>{erro}</Text>
           </View>
-        )}
+        ) : null}
+
+        <View style={styles.refreshContainer}>
+          <TouchableOpacity
+            style={[styles.refreshButton, reloading && { opacity: 0.6 }]}
+            onPress={carregarDados}
+            disabled={reloading}
+          >
+            <Feather
+              name={reloading ? "loader" : "refresh-ccw"}
+              size={20}
+              color={COLORS.primary}
+            />
+            <Text style={styles.refreshText}>
+              {reloading ? "Atualizando..." : "Atualizar Dados"}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         <DashboardCard
           title="Total de Materiais"
@@ -138,8 +118,8 @@ export default function Dashboard() {
           iconName="box"
           iconBg={COLORS.surface}
           iconColor={COLORS.secondary}
-          onPressLink={() => setActiveTab("Materiais")}
           linkText="Ver todos →"
+          onPressLink={() => handleTabChange("Materiais")}
         />
 
         <DashboardCard
@@ -148,8 +128,8 @@ export default function Dashboard() {
           iconName="dollar-sign"
           iconBg={COLORS.surface}
           iconColor={COLORS.success}
-          onPressLink={() => setActiveTab("Estoque")}
           linkText="Ver estoque →"
+          onPressLink={() => handleTabChange("Estoque")}
         />
 
         <DashboardCard
@@ -158,8 +138,8 @@ export default function Dashboard() {
           iconName="alert-triangle"
           iconBg={COLORS.surface}
           iconColor={COLORS.warning}
-          onPressLink={() => setActiveTab("Estoque")}
           linkText="Verificar →"
+          onPressLink={() => handleTabChange("Estoque")}
         />
 
         <View style={styles.actionsContainer}>
@@ -185,24 +165,28 @@ export default function Dashboard() {
 
   const renderContent = () => (
     <>
-      <View style={{ display: activeTab === 'Painel' ? 'flex' : 'none', flex: 1 }}>
+      <View style={{ display: activeTab === "Painel" ? "flex" : "none", flex: 1 }}>
         <PainelContent />
       </View>
-      <View style={{ display: activeTab === 'Materiais' ? 'flex' : 'none', flex: 1 }}>
-        <Materiais />
-      </View>
-      <View style={{ display: activeTab === 'Estoque' ? 'flex' : 'none', flex: 1 }}>
-        <Estoque />
-      </View>
+
+      {visitedTabs.includes("Materiais") && (
+        <View style={{ display: activeTab === "Materiais" ? "flex" : "none", flex: 1 }}>
+          <Materiais />
+        </View>
+      )}
+
+      {visitedTabs.includes("Estoque") && (
+        <View style={{ display: activeTab === "Estoque" ? "flex" : "none", flex: 1 }}>
+          <Estoque />
+        </View>
+      )}
     </>
   );
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <Text style={styles.welcomeText}>
-          Olá, {usuario?.nome || "Usuário"}!
-        </Text>
+        <Text style={styles.welcomeText}>Olá, {usuario?.nome || "Usuário"}!</Text>
         <TouchableOpacity
           style={styles.avatarButton}
           onPress={() => setShowUserMenu(true)}
@@ -226,14 +210,10 @@ export default function Dashboard() {
         >
           <View style={styles.menuModal}>
             <View style={styles.menuHeader}>
-              <View style={styles.menuAvatar}>
-                <Feather name="user" size={24} color={COLORS.primary} />
-              </View>
+              <Feather name="user" size={48} color={COLORS.primary} />
               <Text style={styles.menuUserName}>{usuario?.nome}</Text>
               <Text style={styles.menuUserEmail}>{usuario?.email}</Text>
             </View>
-
-            <View style={styles.menuDivider} />
 
             <TouchableOpacity
               style={styles.menuItem}
@@ -246,12 +226,9 @@ export default function Dashboard() {
               <Text style={styles.menuItemText}>Alterar senha</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.menuItem, styles.logoutItem]}
-              onPress={handleLogout}
-            >
+            <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
               <Feather name="log-out" size={20} color={COLORS.error} />
-              <Text style={styles.logoutText}>Sair</Text>
+              <Text style={[styles.menuItemText, { color: COLORS.error }]}>Sair</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -264,14 +241,9 @@ export default function Dashboard() {
           <TouchableOpacity
             key={tab}
             style={[styles.tabButton, activeTab === tab && styles.activeTab]}
-            onPress={() => setActiveTab(tab as any)}
+            onPress={() => handleTabChange(tab as any)}
           >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === tab && styles.activeTabText,
-              ]}
-            >
+            <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
               {tab}
             </Text>
           </TouchableOpacity>
@@ -286,21 +258,14 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: COLORS.surface,
     paddingVertical: SIZES.padding,
-    alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: SIZES.padding,
-    shadowColor: "#000",
-    shadowOffset: { width: 5, height: 5 },
-    shadowOpacity: 0.05,
-    elevation: 9,
+    elevation: 4,
   },
-  welcomeText: {
-    color: COLORS.primary,
-    fontSize: SIZES.fontLarge,
-    fontWeight: "bold",
-  },
-  avatarButton: {},
+  welcomeText: { color: COLORS.primary, fontSize: SIZES.fontLarge, fontWeight: "bold" },
+  avatarButton: { padding: 4 },
   avatar: {
     width: 40,
     height: 40,
@@ -311,49 +276,21 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: COLORS.primary,
   },
-  content: { flex: 1 },
-  tabs: {
-    flexDirection: "row",
+  refreshContainer: {
+    alignItems: "flex-end",
     marginHorizontal: SIZES.padding,
-    marginBottom: SIZES.padding,
-    backgroundColor: COLORS.surface,
-    borderRadius: 999,
-    overflow: "hidden",
+    marginBottom: 10,
   },
-  tabButton: { flex: 1, paddingVertical: 10, alignItems: "center" },
-  tabText: { color: COLORS.textSecondary, fontWeight: "500" },
-  activeTab: { backgroundColor: COLORS.border },
-  activeTabText: { color: COLORS.primary },
-  rowBetween: {
+  refreshButton: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
-  card: {
-    backgroundColor: COLORS.background,
-    padding: SIZES.padding,
-    marginHorizontal: SIZES.padding,
-    marginBottom: SIZES.padding,
-    borderRadius: SIZES.radius,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  cardTitle: {
-    fontSize: SIZES.fontSmall,
-    color: COLORS.textSecondary,
-    marginBottom: 4,
-  },
-  cardValue: {
-    fontSize: SIZES.fontXL,
-    fontWeight: "600",
-    color: COLORS.text,
-    marginTop: 8,
-  },
-  cardLink: { color: COLORS.primary, fontWeight: "500", marginTop: 4 },
-  iconContainer: { padding: 8, borderRadius: 999 },
+  refreshText: { color: COLORS.primary, fontWeight: "500", marginLeft: 6 },
   actionsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -373,12 +310,19 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   actionText: { color: COLORS.secondary, fontWeight: "500", marginLeft: 8 },
-  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  loadingText: {
-    marginTop: 8,
-    fontSize: SIZES.fontMedium,
-    color: COLORS.textSecondary,
+  tabs: {
+    flexDirection: "row",
+    marginHorizontal: SIZES.padding,
+    marginBottom: SIZES.padding,
+    backgroundColor: COLORS.surface,
+    borderRadius: 999,
+    overflow: "hidden",
   },
+  tabButton: { flex: 1, paddingVertical: 10, alignItems: "center" },
+  tabText: { color: COLORS.textSecondary },
+  activeTab: { backgroundColor: COLORS.border },
+  activeTabText: { color: COLORS.primary, fontWeight: "600" },
+  content: { flex: 1 },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -391,65 +335,15 @@ const styles = StyleSheet.create({
     width: 280,
     backgroundColor: COLORS.background,
     borderRadius: SIZES.radius,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  menuHeader: {
-    alignItems: "center",
     paddingVertical: 20,
-    paddingHorizontal: SIZES.padding,
+    paddingHorizontal: 16,
+    elevation: 10,
   },
-  menuAvatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: COLORS.surface,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 12,
-    borderWidth: 3,
-    borderColor: COLORS.primary,
-  },
-  menuUserName: {
-    fontSize: SIZES.fontLarge,
-    fontWeight: "600",
-    color: COLORS.text,
-    marginBottom: 4,
-  },
-  menuUserEmail: { fontSize: SIZES.fontSmall, color: COLORS.textSecondary },
-  menuDivider: {
-    height: 1,
-    backgroundColor: COLORS.border,
-    marginHorizontal: SIZES.padding,
-  },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-  },
-  menuItemText: {
-    fontSize: SIZES.fontMedium,
-    color: COLORS.text,
-    marginLeft: 12,
-    fontWeight: "500",
-  },
-  logoutItem: {
-    borderTopWidth: 1,
-    borderTopColor: COLORS.error,
-    backgroundColor: COLORS.surface,
-    borderBottomLeftRadius: SIZES.radius,
-    borderBottomRightRadius: SIZES.radius,
-  },
-  logoutText: {
-    fontSize: SIZES.fontMedium,
-    color: COLORS.error,
-    marginLeft: 12,
-    fontWeight: "600",
-  },
+  menuHeader: { alignItems: "center", marginBottom: 10 },
+  menuUserName: { fontSize: 18, fontWeight: "bold", color: COLORS.text },
+  menuUserEmail: { color: COLORS.textSecondary },
+  menuItem: { flexDirection: "row", alignItems: "center", paddingVertical: 10 },
+  menuItemText: { marginLeft: 10, fontSize: 16, color: COLORS.text },
   errorBox: {
     backgroundColor: COLORS.surface,
     marginHorizontal: SIZES.padding,
@@ -458,4 +352,6 @@ const styles = StyleSheet.create({
     marginBottom: SIZES.padding,
   },
   errorText: { color: COLORS.error, fontWeight: "500" },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+  loadingText: { marginTop: 8, color: COLORS.textSecondary },
 });

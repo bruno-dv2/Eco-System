@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Config from 'react-native-config';
 
 const api = axios.create({
-  baseURL: Config.API_URL,
+  baseURL: 'http://localhost:3001/api',
 });
 
 // Interceptor assíncrono corrigido
