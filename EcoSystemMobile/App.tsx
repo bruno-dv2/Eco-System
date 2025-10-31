@@ -1,7 +1,8 @@
 import React, { useEffect, useCallback, useState } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { View, ActivityIndicator, StyleSheet, Image } from 'react-native';
-import { AuthProvider } from './src/contexts/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Toast from 'react-native-toast-message';
@@ -35,13 +36,98 @@ export type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+// Componente interno que tem acesso ao contexto de autenticação
+const AppNavigator: React.FC = () => {
+  const { usuario, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <View style={styles.splashContainer}>
+        <Image
+          source={require('./src/assets/splash-icon.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        <ActivityIndicator
+          size="large"
+          color="#007AFF"
+          style={styles.indicator}
+        />
+      </View>
+    );
+  }
+
+  return (
+    <NavigationContainer>
+      <Stack.Navigator 
+        initialRouteName={usuario ? "Dashboard" : "Welcome"}
+        screenOptions={{
+          headerShown: true,
+        }}
+      >
+        {usuario ? (
+          // Rotas autenticadas
+          <>
+            <Stack.Screen 
+              name="Dashboard" 
+              component={DashboardScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="AlterarSenha" 
+              component={AlterarSenhaScreen} 
+              options={{
+                title: 'Alterar Senha',         
+                headerTitleAlign: 'center',
+                headerStyle: { 
+                  backgroundColor: '#EFF6FF',
+                },
+                headerTintColor: '#2563EB',
+              }}
+            />
+            <Stack.Screen name="Materiais" component={MateriaisScreen} />
+            <Stack.Screen name="Estoque" component={EstoqueScreen} />
+            <Stack.Screen name="EntradaMaterial" component={EntradaMaterialScreen} />
+            <Stack.Screen name="SaidaMaterial" component={SaidaMaterialScreen} />
+          </>
+        ) : (
+          // Rotas não autenticadas
+          <>
+            <Stack.Screen 
+              name="Welcome" 
+              component={WelcomeScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="Login" 
+              component={LoginScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="Registro" 
+              component={RegistroScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="RecuperarSenha" 
+              component={RecuperarSenhaScreen}
+              options={{ headerShown: false }}
+            />
+          </>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+};
+
 const App: React.FC = () => {
   const [isAppReady, setAppReady] = useState(false);
 
   useEffect(() => {
     async function prepare() {
       try {
-        await new Promise(resolve => setTimeout(resolve, 2000));  //time de splash
+        // Aguarda a splash screen
+        await new Promise(resolve => setTimeout(resolve, 2000));
       } catch (e) {
         console.warn(e);
       } finally {
@@ -62,12 +148,12 @@ const App: React.FC = () => {
   if (!isAppReady) {
     // Tela de loading enquanto a splash ainda está ativa
     return (
-        <View style={styles.splashContainer}>
-          <Image
-            source={require('./src/assets/splash-icon.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+      <View style={styles.splashContainer}>
+        <Image
+          source={require('./src/assets/splash-icon.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
         <ActivityIndicator
           size="large"
           color="#007AFF"
@@ -80,41 +166,11 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
-        <NavigationContainer>
-          <Stack.Navigator initialRouteName="Welcome">
-            <Stack.Screen name="Welcome" component={WelcomeScreen} />
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Registro" component={RegistroScreen} />
-            <Stack.Screen name="RecuperarSenha" component={RecuperarSenhaScreen} />
-            <Stack.Screen
-              name="Dashboard"
-              component={DashboardScreen}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen 
-              name="AlterarSenha" 
-              component={AlterarSenhaScreen} 
-              options={{
-                title: 'Alterar Senha',         
-                headerTitleAlign: 'center',
-                headerStyle: { 
-                  backgroundColor: '#EFF6FF',
-                },
-                headerTintColor: '#2563EB',
-              }}
-            />
-            <Stack.Screen name="Materiais" component={MateriaisScreen} />
-            <Stack.Screen name="Estoque" component={EstoqueScreen} />
-            <Stack.Screen name="EntradaMaterial" component={EntradaMaterialScreen} />
-            <Stack.Screen name="SaidaMaterial" component={SaidaMaterialScreen} />
-          </Stack.Navigator>
-        </NavigationContainer>
-
+        <AppNavigator />
         <Toast />
       </View>
     </AuthProvider>
   );
-
 };
 
 export default App;
