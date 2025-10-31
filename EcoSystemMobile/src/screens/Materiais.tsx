@@ -229,7 +229,7 @@ export default function Materiais() {
   const excluirMaterial = async (material: Material) => {
     const saldo = saldos.find((s) => s.material === material.nome)?.quantidade || 0;
     if (saldo > 0)
-      return setErro("❌ Não é possível excluir material com saldo em estoque.");
+      return setErro("Não é possível excluir material com saldo em estoque.");
 
     Alert.alert("Confirmação", `Excluir "${material.nome}"?`, [
       { text: "Cancelar", style: "cancel" },
@@ -315,12 +315,10 @@ export default function Materiais() {
         }
       />
 
-      {/* ➕ Botão flutuante */}
       <TouchableOpacity style={styles.fab} onPress={() => setModalVisible(true)}>
         <Feather name="plus" size={30} color="#fff" />
       </TouchableOpacity>
 
-      {/* 🧩 Modal */}
       <MaterialModal
         visible={modalVisible}
         onClose={() => {
