@@ -221,15 +221,14 @@ const MovimentacaoFormRN: React.FC<MovimentacaoFormRNProps> = ({
 
 export default MovimentacaoFormRN;
 
-
-// 🚀 CORREÇÃO 2: Define 'theme' (minúsculo) para uso nos estilos
 const theme = THEME;
 
+const styles = StyleSheet.create({
   container: {
     padding: theme.spacing.md,
   },
   card: {
-    backgroundColor: theme.colors.surface, // Corrigido 'surfaace' para 'surface'
+    backgroundColor: theme.colors.surface,
     borderRadius: theme.radius.md,
     padding: theme.spacing.md,
     marginBottom: theme.spacing.md,
@@ -308,9 +307,7 @@ const theme = THEME;
     borderRadius: theme.radius.sm,
   },
   submitText: {
-
-   color: theme.colors.white, // Alterado de "#FFF" para usar a constante do tema
-
+    color: theme.colors.white,
     fontWeight: "600",
   },
   errorBox: {

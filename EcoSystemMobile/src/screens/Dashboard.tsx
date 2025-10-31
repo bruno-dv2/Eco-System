@@ -111,15 +111,18 @@ export default function Dashboard() {
       );
     }
 
-    const saldosValidos = Array.isArray(saldos) ? saldos : [];
+  const saldosValidos = Array.isArray(saldos) ? saldos : [];
 
-    const valorTotalEstoque = formatCurrency(
-      saldos.reduce(
-        (total, saldo) => total + saldo.quantidade * saldo.precoMedio,
-        0
-      )
-    );
-    const itensBaixa = saldos.filter((saldo) => saldo.quantidade < 10).length;
+  const valorTotalEstoque = formatCurrency(
+    saldosValidos.reduce(
+      (total, saldo) => total + (saldo.quantidade || 0) * (saldo.precoMedio || 0),
+      0
+    )
+  );
+
+  const itensBaixa = saldosValidos.filter(
+    (saldo) => (saldo.quantidade || 0) < 10
+  ).length;
 
     return (
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>

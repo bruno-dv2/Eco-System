@@ -1,30 +1,19 @@
 import React, { useState, useEffect } from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  ActivityIndicator,
-  StyleSheet,
-} from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { Material } from "../types";
-import { materialService } from "../services/material";
-import { estoqueService } from "../services/estoque";
-import MovimentacaoFormRN from "../components/MovimentacaoFormRN";
-
-interface Movimentacao {
   TextInput,
   TouchableOpacity,
   StyleSheet,
   Alert,
   ActivityIndicator,
   ScrollView,
+  View,
+  Text,
 } from "react-native";
-import DropDownPicker from "react-native-dropdown-picker";
 import { useNavigation } from "@react-navigation/native";
-import materialService from "../services/material";
 import { estoqueService } from "../services/estoque";
 import { Material } from "../types";
+import DropDownPicker from "react-native-dropdown-picker";
+import materialService from "../services/material";
 
 export interface Movimentacao {
   materialId: number;
@@ -35,15 +24,14 @@ export interface Movimentacao {
 export default function EntradaMaterial() {
   const navigation = useNavigation<any>();
 
-  //Estados principais
+  // Estados principais
   const [materiais, setMateriais] = useState<Material[]>([]);
-
-  const [loading, setLoading] = useState(true); // carregamento inicial
-  const [saving, setSaving] = useState(false); // carregamento ao salvar
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState(false);
 
-  //Campos e dropdown
+  // Campos e dropdown
   const [open, setOpen] = useState(false);
   const [materialId, setMaterialId] = useState<number | null>(null);
   const [items, setItems] = useState<{ label: string; value: number }[]>([]);
@@ -56,7 +44,7 @@ export default function EntradaMaterial() {
     preco: false,
   });
 
-  //Carregar materiais do backend
+  // Carregar materiais do backend
   useEffect(() => {
     carregarMateriais();
   }, []);
@@ -78,7 +66,7 @@ export default function EntradaMaterial() {
     }
   };
 
-  //Máscara de preço (R$)
+  // Máscara de preço
   const formatarPreco = (valor: string) => {
     let num = valor.replace(/\D/g, "");
     if (!num) return "";
@@ -91,7 +79,7 @@ export default function EntradaMaterial() {
     if (text) setErrors((e) => ({ ...e, preco: false }));
   };
 
-  //Método de salvar
+  // Método de salvar
   const handleSubmit = async () => {
     const qtd = Number(quantidade);
     const precoNumber = Number(preco.replace(/[^\d,]/g, "").replace(",", "."));
@@ -125,16 +113,17 @@ export default function EntradaMaterial() {
       setSucesso(true);
       setErro("");
 
-     setTimeout(() => {
-  setSaving(false);
-  navigation.navigate("Estoque");
-}, 1500);
-} catch {
-  setErro("Falha ao registrar entradas");
-}
+      setTimeout(() => {
+        setSaving(false);
+        navigation.navigate("Estoque");
+      }, 1500);
+    } catch {
+      setErro("Falha ao registrar entradas");
+      setSaving(false);
+    }
+  }; // ✅ FECHAMENTO correto da função handleSubmit
 
-
-  //Loader inicial
+  // Loader inicial
   if (loading) {
     return (
       <View style={styles.loadingBox}>
@@ -144,12 +133,13 @@ export default function EntradaMaterial() {
     );
   }
 
+  // Tela principal
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
         <Text style={styles.title}>Registrar Entrada de Material</Text>
 
-        {/* Feedback */}
+        {/* Feedbacks */}
         {erro ? (
           <View style={styles.errorBox}>
             <Text style={styles.errorText}>{erro}</Text>
@@ -164,65 +154,56 @@ export default function EntradaMaterial() {
           </View>
         ) : null}
 
-<View style={styles.body}>
-  {/* Mensagens de erro */}
-  {erro ? (
-    <View style={styles.errorBox}>
-      <Text style={styles.errorText}>{erro}</Text>
-    </View>
-  ) : null}
-
-  {/* Mensagem de sucesso */}
-  {sucesso ? (
-    <View style={styles.successBox}>
-      <Text style={styles.successText}>
-        Entradas registradas com sucesso!
-      </Text>
-    </View>
-  ) : null}
-
-  {/* Seletor de material */}
-  <Text style={styles.label}>Material</Text>
-  <View
-    style={[styles.dropdownWrapper, dropdownWidth ? { width: dropdownWidth } : { width: "100%" }]}
-    onLayout={(e) => setDropdownWidth(e.nativeEvent.layout.width)}
-  >
-    <DropDownPicker
-      open={open}
-      value={materialId}
-      items={items}
-      setOpen={setOpen}
-      setValue={setMaterialId}
-      setItems={setItems}
-      searchable
-      placeholder="Selecione um material..."
-      searchPlaceholder="Pesquisar material..."
-      disabled={saving}
-      style={[
-        styles.dropdown,
-        errors.materialId && { borderColor: "red", backgroundColor: "#ffeaea" },
-      ]}
-      listMode="SCROLLVIEW"
-      dropDownDirection="BOTTOM"
-      containerStyle={{ width: "100%", position: "relative" }}
-      dropDownContainerStyle={[
-        styles.dropdownContainer,
-        dropdownWidth
-          ? { position: "absolute", top: 50, left: 0, width: dropdownWidth, zIndex: 3000, elevation: 3000 }
-          : { position: "absolute", top: 50, left: 0, width: "100%", zIndex: 3000, elevation: 3000 },
-      ]}
-    />
-  </View>
-
-  {/* Formulário */}
-  <MovimentacaoFormRN
-    materiais={materiais}
-    tipo="entrada"
-    onSubmit={handleSubmit}
-    onCancel={() => navigation.navigate("Estoque")}
-  />
-</View>
-
+        {/* Seletor de material */}
+        <Text style={styles.label}>Material</Text>
+        <View
+          style={[
+            styles.dropdownWrapper,
+            dropdownWidth ? { width: dropdownWidth } : { width: "100%" },
+          ]}
+          onLayout={(e) => setDropdownWidth(e.nativeEvent.layout.width)}
+        >
+          <DropDownPicker
+            open={open}
+            value={materialId}
+            items={items}
+            setOpen={setOpen}
+            setValue={setMaterialId}
+            setItems={setItems}
+            searchable
+            placeholder="Selecione um material..."
+            searchPlaceholder="Pesquisar material..."
+            disabled={saving}
+            style={[
+              styles.dropdown,
+              errors.materialId && {
+                borderColor: "red",
+                backgroundColor: "#ffeaea",
+              },
+            ]}
+            listMode="SCROLLVIEW"
+            dropDownDirection="BOTTOM"
+            containerStyle={{ width: "100%", position: "relative" }}
+            dropDownContainerStyle={[
+              styles.dropdownContainer,
+              dropdownWidth
+                ? {
+                    position: "absolute",
+                    top: 50,
+                    left: 0,
+                    width: dropdownWidth,
+                    zIndex: 3000,
+                    elevation: 3000,
+                  }
+                : {
+                    position: "absolute",
+                    top: 50,
+                    left: 0,
+                    width: "100%",
+                    zIndex: 3000,
+                    elevation: 3000,
+                  },
+            ]}
           />
         </View>
 
@@ -237,7 +218,10 @@ export default function EntradaMaterial() {
           keyboardType="numeric"
           style={[
             styles.input,
-            errors.quantidade && { borderColor: "red", backgroundColor: "#ffeaea" },
+            errors.quantidade && {
+              borderColor: "red",
+              backgroundColor: "#ffeaea",
+            },
           ]}
           value={quantidade}
           onChangeText={(text) => {
@@ -270,7 +254,11 @@ export default function EntradaMaterial() {
         {/* Botões */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity
-            style={[styles.button, styles.saveButton, saving && styles.buttonDisabled]}
+            style={[
+              styles.button,
+              styles.saveButton,
+              saving && styles.buttonDisabled,
+            ]}
             onPress={handleSubmit}
             disabled={saving}
           >
@@ -281,7 +269,11 @@ export default function EntradaMaterial() {
             )}
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.button, styles.cancelButton, saving && styles.buttonDisabled]}
+            style={[
+              styles.button,
+              styles.cancelButton,
+              saving && styles.buttonDisabled,
+            ]}
             onPress={() => navigation.navigate("Dashboard")}
             disabled={saving}
           >
@@ -302,10 +294,7 @@ export default function EntradaMaterial() {
 }
 
 const styles = StyleSheet.create({
-  centered: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+  container: {
     padding: 16,
   },
   loadingBox: {
@@ -330,15 +319,10 @@ const styles = StyleSheet.create({
     elevation: 2,
     padding: 16,
   },
-  header: {
-    backgroundColor: "#ffffffff",
-    padding: 16,
-    elevation: 2,
-  },
   title: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#000000ff",
+    color: "#000",
     marginBottom: 12,
   },
   label: {
