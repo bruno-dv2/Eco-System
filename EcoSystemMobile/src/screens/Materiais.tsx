@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   FlatList,
-  ActivityIndicator,
   TouchableOpacity,
   TextInput,
   StyleSheet,
@@ -11,16 +10,20 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-} from "react-native";
-import { Feather } from "@expo/vector-icons";
-import { materialService } from "../services/material";
-import { estoqueService } from "../services/estoque";
-import { Material, SaldoMaterial } from "../types";
+  RefreshControl,
+} from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { materialService } from '../services/material';
+import { estoqueService } from '../services/estoque';
+import { Material, SaldoMaterial } from '../types';
+import Loading from '../components/common/Loading';
+import { COLORS, SIZES } from '../constants/theme';
 
+/** Modal de Material */
 type MaterialModalProps = {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (nome: string, descricao: string, unidade: string) => Promise<void>;
+  onSubmit: (nome: string, descricao: string, unidade: string) => void;
   nomeInicial?: string;
   descricaoInicial?: string;
   unidadeInicial?: string;
@@ -30,26 +33,23 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
   visible,
   onClose,
   onSubmit,
-  nomeInicial = "",
-  descricaoInicial = "",
-  unidadeInicial = "",
+  nomeInicial = '',
+  descricaoInicial = '',
+  unidadeInicial = '',
 }) => {
   const [nome, setNome] = useState(nomeInicial);
   const [descricao, setDescricao] = useState(descricaoInicial);
   const [unidade, setUnidade] = useState(unidadeInicial);
   const [errors, setErrors] = useState({ nome: false, descricao: false, unidade: false });
-  const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
-    if (visible) {
-      setNome(nomeInicial);
-      setDescricao(descricaoInicial);
-      setUnidade(unidadeInicial);
-      setErrors({ nome: false, descricao: false, unidade: false });
-    }
-  }, [visible, nomeInicial, descricaoInicial, unidadeInicial]);
+    setNome(nomeInicial);
+    setDescricao(descricaoInicial);
+    setUnidade(unidadeInicial);
+    setErrors({ nome: false, descricao: false, unidade: false });
+  }, [nomeInicial, descricaoInicial, unidadeInicial, visible]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     const newErrors = {
       nome: !nome.trim(),
       descricao: !descricao.trim(),
@@ -58,31 +58,26 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
     setErrors(newErrors);
 
     if (Object.values(newErrors).includes(true)) {
-      Alert.alert("Atenção", "Preencha todos os campos antes de continuar.");
+      Alert.alert('Atenção', 'Preencha todos os campos antes de continuar.');
       return;
     }
 
-    try {
-      setSalvando(true);
-      await onSubmit(nome, descricao, unidade);
-      setNome("");
-      setDescricao("");
-      setUnidade("");
-    } finally {
-      setSalvando(false);
-    }
+    onSubmit(nome, descricao, unidade);
+    setNome('');
+    setDescricao('');
+    setUnidade('');
   };
 
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.modalContainer}
         >
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>
-              {nomeInicial ? "Editar Material" : "Novo Material"}
+              {nomeInicial ? 'Editar Material' : 'Novo Material'}
             </Text>
             <TouchableOpacity onPress={onClose}>
               <Feather name="x" size={24} color="#000" />
@@ -90,6 +85,7 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
           </View>
 
           <View style={[styles.card, { marginTop: 16 }]}>
+            {/* Nome */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Nome</Text>
               <TextInput
@@ -104,6 +100,7 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
               {errors.nome && <Text style={styles.errorText}>Campo obrigatório</Text>}
             </View>
 
+            {/* Descrição */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Descrição</Text>
               <TextInput
@@ -118,6 +115,7 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
               {errors.descricao && <Text style={styles.errorText}>Campo obrigatório</Text>}
             </View>
 
+            {/* Unidade */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Unidade</Text>
               <TextInput
@@ -132,17 +130,9 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
               {errors.unidade && <Text style={styles.errorText}>Campo obrigatório</Text>}
             </View>
 
-            <TouchableOpacity
-              style={[styles.submitButton, salvando && { opacity: 0.6 }]}
-              onPress={handleSubmit}
-              disabled={salvando}
-            >
+            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
               <Text style={styles.submitButtonText}>
-                {salvando
-                  ? "Salvando..."
-                  : nomeInicial
-                  ? "Salvar Alterações"
-                  : "Adicionar Material"}
+                {nomeInicial ? 'Salvar Alterações' : 'Adicionar Material'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -152,33 +142,39 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
   );
 };
 
+/** Componente principal */
 export default function Materiais() {
   const [materiais, setMateriais] = useState<Material[]>([]);
   const [saldos, setSaldos] = useState<SaldoMaterial[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [editarMaterial, setEditarMaterial] = useState<Material | null>(null);
-  const [erro, setErro] = useState("");
-  const [sucesso, setSucesso] = useState("");
+  const [erro, setErro] = useState('');
+  const [sucesso, setSucesso] = useState('');
 
   const carregarDados = async () => {
-    setLoading(true);
     try {
       const [materiaisData, saldosData] = await Promise.all([
         materialService.listar(),
         estoqueService.consultarSaldo(),
       ]);
-      setMateriais(Array.isArray(materiaisData) ? materiaisData : []);
-      setSaldos(Array.isArray(saldosData) ? saldosData : []);
-      setErro("");
-    } catch (err: any) {
-      console.error("Erro ao carregar materiais:", err);
-      setErro(err.message || "Falha ao carregar materiais");
+      setMateriais(materiaisData);
+      setSaldos(saldosData);
+      setErro('');
+    } catch {
+      setErro('Falha ao carregar materiais');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    carregarDados();
+  }, []);
 
   useEffect(() => {
     carregarDados();
@@ -186,32 +182,26 @@ export default function Materiais() {
 
   const resetForm = () => setEditarMaterial(null);
 
-  const adicionarOuEditarMaterial = async (
-    nome: string,
-    descricao: string,
-    unidade: string
-  ) => {
-    setErro("");
-    setSucesso("");
+  const adicionarOuEditarMaterial = async (nome: string, descricao: string, unidade: string) => {
+    setErro('');
+    setSucesso('');
     try {
       if (editarMaterial) {
         await materialService.atualizar(editarMaterial.id, { nome, descricao, unidade });
-        setSucesso("Material atualizado com sucesso!");
+        setSucesso('Material atualizado com sucesso');
       } else {
         await materialService.criar({ nome, descricao, unidade });
-        setSucesso("Material cadastrado com sucesso!");
+        setSucesso('Material cadastrado com sucesso');
       }
       await carregarDados();
       setModalVisible(false);
       resetForm();
-      setTimeout(() => setSucesso(""), 3000);
+      setTimeout(() => setSucesso(''), 3000);
     } catch (error: any) {
-      console.error("Erro ao salvar material:", error);
       setErro(
-        error.response?.data?.mensagem ||
-          (editarMaterial
-            ? "Falha ao atualizar material"
-            : "Falha ao criar material")
+        error.message.includes('already exists')
+          ? 'Já existe um material cadastrado com este nome'
+          : `Falha ao ${editarMaterial ? 'atualizar' : 'criar'} material`
       );
     }
   };
@@ -223,44 +213,42 @@ export default function Materiais() {
 
   const excluirMaterial = async (material: Material) => {
     const saldo = saldos.find((s) => s.material === material.nome)?.quantidade || 0;
-    if (saldo > 0)
-      return setErro("Não é possível excluir material com saldo em estoque.");
+    if (saldo > 0) return setErro('Não é possível excluir material com saldo em estoque');
 
-    Alert.alert("Confirmação", `Excluir "${material.nome}"?`, [
-      { text: "Cancelar", style: "cancel" },
+    Alert.alert('Confirmação', `Tem certeza que deseja excluir "${material.nome}"?`, [
+      { text: 'Cancelar', style: 'cancel' },
       {
-        text: "Excluir",
-        style: "destructive",
+        text: 'Excluir',
+        style: 'destructive',
         onPress: async () => {
           try {
             await materialService.excluir(material.id);
-            setSucesso("Material excluído com sucesso!");
+            setSucesso('Material excluído com sucesso');
             await carregarDados();
-            setTimeout(() => setSucesso(""), 3000);
-          } catch (error: any) {
-            console.error("Erro ao excluir:", error);
-            setErro(error.response?.data?.mensagem || "Falha ao excluir material");
+            setTimeout(() => setSucesso(''), 3000);
+          } catch {
+            setErro('Falha ao excluir material');
           }
         },
       },
     ]);
   };
 
-  const materiaisFiltrados = materiais.filter((m) =>
-    (m.nome || "").toLowerCase().includes(search.toLowerCase())
+  const materiaisValidos = Array.isArray(materiais) ? materiais : [];
+  const materiaisFiltrados = materiaisValidos.filter((m) =>
+    (m.nome || '').toLowerCase().includes(search.toLowerCase())
   );
 
-  if (loading)
-    return (
-      <ActivityIndicator size="large" color="#2563EB" style={{ flex: 1, marginTop: 40 }} />
-    );
+  if (loading) {
+    return <Loading message="Carregando materiais..." fullScreen />;
+  }
 
   const renderItem = ({ item }: { item: Material }) => {
     const saldo = saldos.find((s) => s.material === item.nome)?.quantidade || 0;
     return (
       <View style={styles.item}>
         <Text style={styles.nome}>{item.nome}</Text>
-        <Text style={styles.descricao}>{item.descricao || "-"}</Text>
+        <Text style={styles.descricao}>{item.descricao || '-'}</Text>
         <Text style={styles.unidade}>{item.unidade}</Text>
         <View style={styles.botoes}>
           <TouchableOpacity style={styles.botaoIcon} onPress={() => abrirModalEditar(item)}>
@@ -271,7 +259,7 @@ export default function Materiais() {
             onPress={() => excluirMaterial(item)}
             disabled={saldo > 0}
           >
-            <Feather name="trash-2" size={20} color={saldo > 0 ? "#999" : "#ef4444"} />
+            <Feather name="trash-2" size={20} color={saldo > 0 ? '#999' : '#ef4444'} />
           </TouchableOpacity>
         </View>
       </View>
@@ -300,6 +288,14 @@ export default function Materiais() {
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
         contentContainerStyle={{ paddingBottom: 120 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[COLORS.primary]}
+            tintColor={COLORS.primary}
+          />
+        }
         ListHeaderComponent={
           <View style={styles.cabecalho}>
             <Text style={styles.colNome}>Nome</Text>
@@ -330,111 +326,115 @@ export default function Materiais() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "#f9fafb" },
+  container: { flex: 1, padding: 16, backgroundColor: '#f9fafb' },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
-    borderColor: "#292626",
+    borderColor: '#292626',
     borderRadius: 4,
     paddingHorizontal: 8,
     paddingVertical: 4,
     marginBottom: 12,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
   },
-  title: { fontSize: 22, fontWeight: "bold", marginBottom: 12 },
+  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 12 },
   input: { flex: 1, height: 40 },
   msgErro: {
-    backgroundColor: "#fee2e2",
-    color: "#b91c1c",
+    backgroundColor: '#fee2e2',
+    color: '#b91c1c',
     padding: 8,
     borderRadius: 4,
     marginBottom: 8,
   },
   msgSucesso: {
-    backgroundColor: "#d1fae5",
-    color: "#065f46",
+    backgroundColor: '#d1fae5',
+    color: '#065f46',
     padding: 8,
     borderRadius: 4,
     marginBottom: 8,
   },
   cabecalho: {
-    flexDirection: "row",
+    flexDirection: 'row',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderColor: "#ccc",
+    borderColor: '#ccc',
   },
-  colNome: { flex: 2, fontWeight: "bold" },
-  colDescricao: { flex: 2, fontWeight: "bold" },
-  colUnidade: { flex: 1, fontWeight: "bold" },
-  colAcao: { flex: 1, fontWeight: "bold", textAlign: "center" },
+  colNome: { flex: 2, fontWeight: 'bold' },
+  colDescricao: { flex: 2, fontWeight: 'bold' },
+  colUnidade: { flex: 1, fontWeight: 'bold' },
+  colAcao: { flex: 1, fontWeight: 'bold', textAlign: 'center' },
   item: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 8,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     borderRadius: 6,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: '#ddd',
   },
   nome: { flex: 2 },
   descricao: { flex: 2 },
   unidade: { flex: 1 },
   botoes: {
     flex: 1,
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
   },
   botaoIcon: { padding: 6, borderRadius: 4 },
   fab: {
-    position: "absolute",
+    position: 'absolute',
     bottom: 24,
     right: 24,
-    backgroundColor: "#2563EB",
+    backgroundColor: '#2563EB',
     width: 60,
     height: 60,
     borderRadius: 30,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     elevation: 5,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalContainer: {
-    backgroundColor: "#fff",
-    width: "85%",
+    backgroundColor: '#fff',
+    width: '85%',
     borderRadius: 10,
     padding: 16,
     elevation: 5,
   },
   modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     borderBottomWidth: 1,
-    borderColor: "#eee",
+    borderColor: '#eee',
     paddingBottom: 8,
   },
-  modalTitle: { fontSize: 18, fontWeight: "bold" },
-  card: { backgroundColor: "#f9fafb", padding: 16, borderRadius: 8 },
+  modalTitle: { fontSize: 18, fontWeight: 'bold' },
+  card: { backgroundColor: '#f9fafb', padding: 16, borderRadius: 8 },
   inputGroup: { marginBottom: 12 },
-  label: { marginBottom: 4, fontWeight: "600" },
-  inputCard: { borderWidth: 1, borderColor: "#ccc", borderRadius: 4, padding: 8 },
-  inputError: { borderColor: "red", backgroundColor: "#ffeaea" },
-  errorText: { color: "red", fontSize: 12, marginTop: 2 },
+  label: { marginBottom: 4, fontWeight: '600' },
+  inputCard: { borderWidth: 1, borderColor: '#ccc', borderRadius: 4, padding: 8 },
+  inputError: { borderColor: 'red', backgroundColor: '#ffeaea' },
+  errorText: { color: 'red', fontSize: 12, marginTop: 2 },
   submitButton: {
-    backgroundColor: "#2563EB",
+    backgroundColor: '#2563EB',
     padding: 12,
     borderRadius: 6,
-    alignItems: "center",
+    alignItems: 'center',
     marginTop: 8,
   },
-  submitButtonText: { color: "#fff", fontWeight: "600" },
+  submitButtonText: { color: '#fff', fontWeight: '600' },
 });
