@@ -17,7 +17,6 @@ import { materialService } from "../services/material";
 import { estoqueService } from "../services/estoque";
 import { Material, SaldoMaterial } from "../types";
 
-/** 🔹 Modal de criação/edição de material */
 type MaterialModalProps = {
   visible: boolean;
   onClose: () => void;
@@ -91,7 +90,6 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
           </View>
 
           <View style={[styles.card, { marginTop: 16 }]}>
-            {/* Nome */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Nome</Text>
               <TextInput
@@ -106,7 +104,6 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
               {errors.nome && <Text style={styles.errorText}>Campo obrigatório</Text>}
             </View>
 
-            {/* Descrição */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Descrição</Text>
               <TextInput
@@ -121,7 +118,6 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
               {errors.descricao && <Text style={styles.errorText}>Campo obrigatório</Text>}
             </View>
 
-            {/* Unidade */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Unidade</Text>
               <TextInput
@@ -156,7 +152,6 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
   );
 };
 
-/** 🔹 Tela principal de Materiais */
 export default function Materiais() {
   const [materiais, setMateriais] = useState<Material[]>([]);
   const [saldos, setSaldos] = useState<SaldoMaterial[]>([]);
@@ -334,7 +329,6 @@ export default function Materiais() {
   );
 }
 
-/* 🎨 Estilos */
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: "#f9fafb" },
   header: {

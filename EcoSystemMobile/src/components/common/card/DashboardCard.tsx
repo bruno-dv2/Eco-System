@@ -5,14 +5,14 @@ import { COLORS, SIZES } from "../../../constants/theme";
 
 interface DashboardCardProps {
   title: string;
-  value?: string | number; // ✅ adicionado
+  value?: string | number;
   iconName?: keyof typeof Feather.glyphMap;
   iconBg?: string;
   iconColor?: string;
   linkText?: string;
   onPressLink?: () => void;
   variant?: "dashboard" | "estoque" | "materiais";
-  children?: ReactNode; // ✅ permite conteúdo interno
+  children?: ReactNode;
 }
 
 export const DashboardCard: React.FC<DashboardCardProps> = ({
@@ -27,7 +27,6 @@ export const DashboardCard: React.FC<DashboardCardProps> = ({
   children,
 }) => (
   <View style={[styles.card, variantStyles[variant]]}>
-    {/* Cabeçalho do card */}
     <View style={styles.header}>
       <Text style={styles.title}>{title}</Text>
       {iconName && (
@@ -37,17 +36,14 @@ export const DashboardCard: React.FC<DashboardCardProps> = ({
       )}
     </View>
 
-    {/* Valor principal (para cards tipo Dashboard) */}
     {value !== undefined && (
       <Text style={styles.valueText}>
         {typeof value === "number" ? value.toString() : value}
       </Text>
     )}
 
-    {/* Corpo do card */}
     {children && <View style={styles.content}>{children}</View>}
 
-    {/* Link opcional */}
     {onPressLink && linkText && (
       <TouchableOpacity onPress={onPressLink}>
         <Text style={styles.link}>{linkText}</Text>
